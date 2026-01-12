@@ -170,6 +170,16 @@ Important Instructions:
             },
         ]
 
+    def _get_default_action_message(self, action_name: str | None) -> str:
+        """Generate a default message for tool actions if AI didn't provide one."""
+        action_messages = {
+            "add_task": "Theek hai, task add kar diya gaya hai!",
+            "list_tasks": "Aapke tasks dekh rahe hain...",
+            "update_task": "Task update kar diya gaya hai!",
+            "delete_task": "Task delete kar diya gaya hai!",
+        }
+        return action_messages.get(action_name, "Action complete ho gaya!")
+
     async def process_message(
         self,
         user_message: str,
@@ -227,15 +237,26 @@ Important Instructions:
                 for tool in assistant_message.tool_calls
             ]
 
+            # Generate a natural language confirmation for the action
+            # If AI didn't provide a message, generate one based on the action
+            action_name = tool_calls_data[0]["name"] if tool_calls_data else None
+            message_text = assistant_message.content or self._get_default_action_message(action_name)
+
             return ChatResponse(
-                message=assistant_message.content or "",
-                action_taken=tool_calls_data[0]["name"] if tool_calls_data else None,
+                message=message_text,
+                action_taken=action_name,
                 action_result=tool_calls_data[0]["arguments"] if tool_calls_data else None,
             )
 
         # Return plain text response
+        # Ensure we always have a message (never empty)
+        message_text = (assistant_message.content or "").strip()
+        if not message_text:
+            # Fallback if AI returns empty content
+            message_text = "Ji, main samajh nahi paya. Dobara bolye ga?"
+
         return ChatResponse(
-            message=assistant_message.content or "",
+            message=message_text,
             action_taken=None,
             action_result=None,
         )

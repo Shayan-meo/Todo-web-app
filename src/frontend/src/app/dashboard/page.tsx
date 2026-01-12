@@ -50,7 +50,21 @@ export default function DashboardPage() {
       }
     };
 
+    // Initial load
     fetchTasks();
+
+    // Listen for AI chatbot task updates
+    const handleTasksUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("Tasks updated via AI:", customEvent.detail);
+      fetchTasks();
+    };
+
+    window.addEventListener("tasksUpdated", handleTasksUpdated);
+
+    return () => {
+      window.removeEventListener("tasksUpdated", handleTasksUpdated);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

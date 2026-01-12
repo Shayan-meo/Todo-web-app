@@ -61,6 +61,18 @@ export function AIChatbot() {
     try {
       const response = await chatApi.sendMessage(message);
 
+      // DEBUG: Log full response to console
+      console.log("AI Response:", response.data);
+
+      // Extract message with fallback
+      let messageContent = response.data.message || response.data.response || "";
+
+      // If message is empty or whitespace only, provide fallback
+      if (!messageContent || !messageContent.trim()) {
+        console.warn("Empty message from AI, using fallback");
+        messageContent = "Ji, main samajh nahi paya. Dobara bolye ga?";
+      }
+
       // Show toast notification ONLY for successful database actions
       if (response.data.action_taken && response.data.action_result?.success !== false) {
         // Only show toast for actual database mutations (not list_tasks which is just a read)
@@ -76,6 +88,16 @@ export function AIChatbot() {
           toast.success(actionMessages[response.data.action_taken] || "Done!", {
             duration: 2000,
           });
+
+          // Trigger tasks refresh after mutation
+          if (typeof window !== "undefined") {
+            // Dispatch custom event to notify dashboard of new/updated tasks
+            window.dispatchEvent(
+              new CustomEvent("tasksUpdated", {
+                detail: { action: response.data.action_taken },
+              })
+            );
+          }
         }
       }
 
@@ -83,7 +105,7 @@ export function AIChatbot() {
         id: Date.now() + 1,
         user_id: 0,
         role: "assistant",
-        content: response.data.message,
+        content: messageContent,
         created_at: new Date().toISOString(),
       };
 
