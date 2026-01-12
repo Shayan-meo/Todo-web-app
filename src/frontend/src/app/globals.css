@@ -118,7 +118,7 @@
   }
 
   .glass-card {
-    @apply backdrop-blur-xl bg-background/60 border border-white/10 shadow-xl shadow-indigo-500/5;
+    @apply backdrop-blur-xl bg-background/60 border border-white/20 shadow-lg shadow-black/5;
   }
 }
 

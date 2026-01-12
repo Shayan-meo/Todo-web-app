@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import type { ChatMessage, ChatResponse } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -17,3 +18,11 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Chat API
+export const chatApi = {
+  sendMessage: (message: string) =>
+    apiClient.post<ChatResponse>("/ai/chat", { message }),
+  getHistory: () => apiClient.get<ChatMessage[]>("/ai/chat/history"),
+  clearHistory: () => apiClient.delete("/ai/chat/history"),
+};

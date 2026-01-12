@@ -18,3 +18,17 @@ export interface TaskUpdateInput {
   description?: string | null;
   is_completed?: boolean;
 }
+
+export interface ChatMessage {
+  id: number;
+  user_id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface ChatResponse {
+  message: string;
+  action_taken?: string;
+  action_result?: Record<string, unknown>;
+}

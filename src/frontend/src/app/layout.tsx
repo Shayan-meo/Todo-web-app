@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Toaster } from "sonner";
 import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -24,6 +25,7 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="todo-app-theme"
         >
+          <Toaster position="top-right" richColors />
           <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 dark:from-slate-950 dark:via-indigo-950/20 dark:to-violet-950/20">
             {/* Premium Header with Glassmorphism */}
             <header className="sticky top-0 z-50 glass-subtle border-b border-white/10 dark:border-white/5">

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 hours
 
+    # AI Provider Settings (Groq API)
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+
     @property
     def parsed_cors_origins(self) -> List[str]:
         if isinstance(self.backend_cors_origins, str):

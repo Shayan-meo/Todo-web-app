@@ -10,6 +10,7 @@ import { Task } from "@/lib/types";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/task-list";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { AIChatbot } from "@/components/ai-chatbot";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -202,6 +203,8 @@ export default function DashboardPage() {
       <main className="flex-1 p-6">
         {/* WhatsApp Contact Button */}
         <WhatsAppButton />
+        {/* AI Chatbot */}
+        <AIChatbot />
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <motion.div

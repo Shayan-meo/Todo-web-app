@@ -17,3 +17,4 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     tasks: Mapped[list["Task"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+    chat_messages: Mapped[list["ChatMessage"]] = relationship(back_populates="user", cascade="all, delete-orphan")

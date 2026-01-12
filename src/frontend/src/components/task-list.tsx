@@ -37,7 +37,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
         className="rounded-xl border-2 border-dashed bg-card/50 p-12 text-center"
       >
         <Circle className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-        <p className="text-lg font-medium text-muted-foreground">No tasks yet</p>
+        <p className="text-lg font-medium text-foreground">Sukoon hi sukoon! Koi pending task nahi hai.</p>
         <p className="text-sm text-muted-foreground/70 mt-1">Create your first task to get started!</p>
       </motion.div>
     );
