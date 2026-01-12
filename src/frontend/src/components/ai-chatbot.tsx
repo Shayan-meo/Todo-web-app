@@ -61,21 +61,22 @@ export function AIChatbot() {
     try {
       const response = await chatApi.sendMessage(message);
 
-      // Show toast notification if AI performed an action
-      if (response.data.action_taken) {
-        const actionMessages: Record<string, string> = {
-          add_task: "AI ne task add kar diya!",
-          update_task: "AI ne task update kar diya!",
-          delete_task: "AI ne task delete kar diya!",
-          list_tasks: "AI ne task list show kar di!",
-        };
+      // Show toast notification ONLY for successful database actions
+      if (response.data.action_taken && response.data.action_result?.success !== false) {
+        // Only show toast for actual database mutations (not list_tasks which is just a read)
+        const dbMutationActions = ["add_task", "update_task", "delete_task"];
 
-        const toastMessage = actionMessages[response.data.action_taken] || `AI performed: ${response.data.action_taken}`;
-        toast.success(toastMessage, {
-          description: response.data.action_result
-            ? `Details: ${JSON.stringify(response.data.action_result)}`
-            : undefined,
-        });
+        if (dbMutationActions.includes(response.data.action_taken)) {
+          const actionMessages: Record<string, string> = {
+            add_task: "Task Added",
+            update_task: "Task Updated",
+            delete_task: "Task Deleted",
+          };
+
+          toast.success(actionMessages[response.data.action_taken] || "Done!", {
+            duration: 2000,
+          });
+        }
       }
 
       const assistantMessage: ChatMessage = {
@@ -89,8 +90,9 @@ export function AIChatbot() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error("Failed to send message:", error);
-      toast.error("Chat error", {
-        description: error.response?.data?.detail || "Failed to connect to AI",
+      toast.error("Oops! Something went wrong", {
+        description: "Please try again",
+        duration: 3000,
       });
 
       const errorMessage: ChatMessage = {
