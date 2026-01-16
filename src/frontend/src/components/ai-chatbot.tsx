@@ -73,7 +73,7 @@ export function AIChatbot() {
 
       if (!response.ok) throw new Error("Network response was not ok");
 
-      // JSON response handling to fix real-time update
+      // JSON response handling
       const data = await response.json();
 
       if (data && data.content) {
@@ -87,14 +87,18 @@ export function AIChatbot() {
         
         setMessages((prev) => [...prev, assistantMessage]);
 
-        if (data.action_taken) {
-          const actionMessages: Record<string, string> = {
-            add_task: "Task Added",
+        // --- FIXED NOTIFICATION & REFRESH LOGIC ---
+        // Notification aur Refresh sirf database changes par hoga
+        const mutationActions = ["add_task", "update_task", "delete_task"];
+
+        if (data.action_taken && mutationActions.includes(data.action_taken)) {
+          const actionLabels: Record<string, string> = {
+            add_task: "Task Added Successfully",
             update_task: "Task Updated",
             delete_task: "Task Deleted",
           };
 
-          toast.success(actionMessages[data.action_taken] || "Action Completed", {
+          toast.success(actionLabels[data.action_taken] || "Action Completed", {
             duration: 2000,
           });
 
@@ -106,6 +110,7 @@ export function AIChatbot() {
             );
           }
         }
+        // Agar action 'list_tasks' hai ya 'null' (Hi/Hello), toh page refresh nahi hoga
       }
     } catch (error: any) {
       console.error("Failed to send message:", error);
@@ -139,7 +144,7 @@ export function AIChatbot() {
 
   return (
     <>
-      {/* Chat Button */}
+      {/* Chat Button with Pulse Animation */}
       <motion.button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 z-50 group"
@@ -169,6 +174,7 @@ export function AIChatbot() {
       <AnimatePresence>
         {isOpen && (
           <>
+            {/* Backdrop with Blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -177,6 +183,7 @@ export function AIChatbot() {
               className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
             />
 
+            {/* Sidebar Sidebar Container */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -213,7 +220,7 @@ export function AIChatbot() {
                     </div>
                   </div>
 
-                  {/* Messages Section */}
+                  {/* Messages Scroll Area */}
                   <div
                     ref={scrollContainerRef}
                     className="flex-1 overflow-y-auto p-4 scrollbar-thin"
@@ -296,7 +303,7 @@ export function AIChatbot() {
                     </div>
                   </div>
 
-                  {/* Quick Actions Footer */}
+                  {/* Quick Actions Chips */}
                   {messages.length > 0 && (
                     <div className="p-4 border-t border-white/10">
                       <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
@@ -314,7 +321,7 @@ export function AIChatbot() {
                     </div>
                   )}
 
-                  {/* Input Form Section */}
+                  {/* Message Input Form */}
                   <div className="p-4 border-t border-white/10">
                     <form
                       onSubmit={(e) => {
