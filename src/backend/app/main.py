@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -13,21 +14,20 @@ from app.services.reminder_service import start_reminder_loop
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager.
-    Initializes database tables on startup.
-    Starts background tasks.
+    Initializes database tables on startup and starts background tasks.
     """
-    # Startup: Database initialize karein
+    # Startup: Database initialize
     try:
         init_db()
     except Exception as e:
-        print(f"Database Init Error: {e}")
+        print(f"CRITICAL: Database Init Error: {e}")
 
-    # Start notification scheduler
+    # Start notification scheduler as a background task
     scheduler_task = asyncio.create_task(start_reminder_loop())
 
     yield
 
-    # Shutdown
+    # Shutdown: Cancel background tasks
     scheduler_task.cancel()
     try:
         await scheduler_task
@@ -43,13 +43,19 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS FIXED: Sab origins allow kar diye taake Vercel block na ho
+    # CORS UPDATED: Specific domains + Wildcard for local testing
+    # Railway aur Vercel ke darmiyan "Failed to fetch" isi se hal hoga
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  
+        allow_origins=[
+            "https://todo-web-app-red-mu.vercel.app", # Aapka asali frontend
+            "http://localhost:3000",                  # Local testing
+            "*"                                       # Safe fallback
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"], # Taake headers frontend ko mil saken
     )
 
     # Root endpoint
@@ -57,14 +63,14 @@ def create_app() -> FastAPI:
     def root():
         return {
             "message": "Todo API is running",
-            "docs": "/api/docs",
-            "redoc": "/api/redoc"
+            "docs": f"{settings.api_prefix}/docs",
+            "redoc": f"{settings.api_prefix}/redoc"
         }
 
-    # HEALTH CHECK ADDED: Railway is raste se check karega ke app sahi chal rahi hai
-    @app.get("/api/health")
+    # HEALTH CHECK: Railway automation ke liye zaroori rasta
+    @app.get("/api/health", tags=["health"])
     def health_check():
-        return {"status": "healthy", "service": "todo-backend"}
+        return {"status": "healthy", "service": "todo-backend", "environment": os.environ.get("RAILWAY_ENVIRONMENT", "local")}
 
     # Include API router
     app.include_router(api_router, prefix=settings.api_prefix)
@@ -75,7 +81,6 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    import os
-    # Railway aksar PORT environment variable deta hai, hum usay use karenge
+    # Railway defaults to port 8080 or dynamic PORT
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)
