@@ -9,7 +9,6 @@ from app.api.v1.router import api_router
 from app.db.base import init_db
 from app.services.reminder_service import start_reminder_loop
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -17,8 +16,11 @@ async def lifespan(app: FastAPI):
     Initializes database tables on startup.
     Starts background tasks.
     """
-    # Startup
-    init_db()
+    # Startup: Database initialize karein
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Database Init Error: {e}")
 
     # Start notification scheduler
     scheduler_task = asyncio.create_task(start_reminder_loop())
@@ -32,7 +34,6 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         pass
 
-
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.project_name,
@@ -42,10 +43,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS middleware - allow all origins to bypass CORS issues
+    # CORS FIXED: Sab origins allow kar diye taake Vercel block na ho
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["*"],  
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -60,16 +61,21 @@ def create_app() -> FastAPI:
             "redoc": "/api/redoc"
         }
 
+    # HEALTH CHECK ADDED: Railway is raste se check karega ke app sahi chal rahi hai
+    @app.get("/api/health")
+    def health_check():
+        return {"status": "healthy", "service": "todo-backend"}
+
     # Include API router
     app.include_router(api_router, prefix=settings.api_prefix)
 
     return app
 
-
 app = create_app()
-
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    # Railway aksar PORT environment variable deta hai, hum usay use karenge
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
