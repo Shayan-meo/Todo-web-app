@@ -59,18 +59,6 @@ export function AIChatbot() {
     setIsLoading(true);
 
     try {
-      // 1. Setup optimistic assistant message
-      const assistantId = Date.now() + 1;
-      const assistantMessage: ChatMessage = {
-        id: assistantId,
-        user_id: 0,
-        role: "assistant",
-        content: "", // Content will stream in
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      // 2. Start Streaming Request
       const token = localStorage.getItem("todo_token");
       const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -84,75 +72,44 @@ export function AIChatbot() {
       });
 
       if (!response.ok) throw new Error("Network response was not ok");
-      if (!response.body) throw new Error("No response body");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedContent = "";
+      // JSON response handling to fix real-time update
+      const data = await response.json();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      if (data && data.content) {
+        const assistantMessage: ChatMessage = {
+          id: Date.now(),
+          user_id: 0,
+          role: "assistant",
+          content: data.content,
+          created_at: new Date().toISOString(),
+        };
+        
+        setMessages((prev) => [...prev, assistantMessage]);
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        if (data.action_taken) {
+          const actionMessages: Record<string, string> = {
+            add_task: "Task Added",
+            update_task: "Task Updated",
+            delete_task: "Task Deleted",
+          };
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const event = JSON.parse(line);
+          toast.success(actionMessages[data.action_taken] || "Action Completed", {
+            duration: 2000,
+          });
 
-            if (event.type === "token") {
-              accumulatedContent += event.content;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantId ? { ...msg, content: accumulatedContent } : msg
-                )
-              );
-            } else if (event.type === "action_result") {
-              // Handle database mutations (notifications & refresh)
-              const dbMutationActions = ["add_task", "update_task", "delete_task"];
-
-              if (event.action_taken && dbMutationActions.includes(event.action_taken)) {
-                const actionMessages: Record<string, string> = {
-                  add_task: "Task Added",
-                  update_task: "Task Updated",
-                  delete_task: "Task Deleted",
-                };
-
-                toast.success(actionMessages[event.action_taken] || "Action Completed", {
-                  duration: 2000,
-                });
-
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("tasksUpdated", {
-                      detail: { action: event.action_taken },
-                    })
-                  );
-                }
-              }
-            } else if (event.type === "error") {
-               console.error("Stream Error:", event.content);
-               toast.error("Error from AI: " + event.content);
-            }
-          } catch (e) {
-            console.warn("Failed to parse stream chunk:", line);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("tasksUpdated", {
+                detail: { action: data.action_taken },
+              })
+            );
           }
         }
       }
     } catch (error: any) {
       console.error("Failed to send message:", error);
-      toast.error("Oops! Something went wrong");
-
-      // Update the empty message to show error
-      setMessages((prev) =>
-        prev.map((msg, i) =>
-          i === prev.length - 1 && msg.role === "assistant" && !msg.content
-            ? { ...msg, content: "Sorry, connection failed. Please try again." }
-            : msg
-        )
-      );
+      toast.error("Oops! Connection failed.");
     } finally {
       setIsLoading(false);
     }
@@ -209,11 +166,9 @@ export function AIChatbot() {
         </div>
       </motion.button>
 
-      {/* Chat Sidebar */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -222,7 +177,6 @@ export function AIChatbot() {
               className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
             />
 
-            {/* Sidebar */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -232,7 +186,8 @@ export function AIChatbot() {
             >
               <div className="flex h-full">
                 <div className="flex-1 glass-strong border-r border-white/10 flex flex-col">
-                  {/* Header */}
+                  
+                  {/* Header Section */}
                   <div className="flex items-center justify-between p-4 border-b border-white/10">
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-5 w-5 text-indigo-500" />
@@ -258,7 +213,7 @@ export function AIChatbot() {
                     </div>
                   </div>
 
-                  {/* Messages */}
+                  {/* Messages Section */}
                   <div
                     ref={scrollContainerRef}
                     className="flex-1 overflow-y-auto p-4 scrollbar-thin"
@@ -316,6 +271,7 @@ export function AIChatbot() {
                               </div>
                             </motion.div>
                           ))}
+                          
                           {isLoading && (
                             <motion.div
                               initial={{ opacity: 0, y: 10 }}
@@ -340,6 +296,7 @@ export function AIChatbot() {
                     </div>
                   </div>
 
+                  {/* Quick Actions Footer */}
                   {messages.length > 0 && (
                     <div className="p-4 border-t border-white/10">
                       <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
@@ -357,7 +314,7 @@ export function AIChatbot() {
                     </div>
                   )}
 
-                  {/* Input */}
+                  {/* Input Form Section */}
                   <div className="p-4 border-t border-white/10">
                     <form
                       onSubmit={(e) => {
@@ -388,6 +345,7 @@ export function AIChatbot() {
                       </Button>
                     </form>
                   </div>
+
                 </div>
               </div>
             </motion.div>
