@@ -26,6 +26,7 @@ class AIService:
         tasks_summary = self._format_tasks_for_context(user_tasks)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # FIXED: Curly braces escaped using {{ and }} inside the f-string
         return f"""You are a smart, professional, and culturally intelligent Task Manager Assistant for a Hackathon environment.
 
 Current Time: {current_time}
@@ -71,16 +72,14 @@ Behavior & Personality Guidelines:
      * When user says "Aaram se", "Jab time miley", "Kam zaroori", "Low", "Whenever" → **MUST** call add_task with priority="Low"
      * If no priority words detected → Use priority="Normal"
    - **ABSOLUTE REQUIREMENT**: When calling `add_task` tool, **ALWAYS** include 'priority' parameter. Example tool call:
-     ```json
-     {
+     {{
        "name": "add_task",
-       "arguments": {
+       "arguments": {{
          "title": "Project report submit karni hai",
          "priority": "High",
          "reminder_time": "2024-01-17T10:00:00"
-       }
-     }
-     ```
+       }}
+     }}
 
 4. **HANDLING AMBIGUITY**:
    - If a user says "Task add karo" without details, DO NOT guess.
@@ -91,9 +90,9 @@ Behavior & Personality Guidelines:
    - Call tools ONLY when you have minimal required info (Title).
    - For `add_task`: **ALWAYS** include 'priority' parameter (High/Medium/Normal/Low) using detection rules above. If no priority words, use priority="Normal".
    - **Example correct tool calls**:
-     * User: "Urgent meeting tomorrow" → {"title": "Meeting", "priority": "High", "reminder_time": "2024-01-17T10:00:00"}
-     * User: "Grocery leni hai aaram se" → {"title": "Grocery leni hai", "priority": "Low"}
-     * User: "Task add karo: Call mom" → {"title": "Call mom", "priority": "Normal"}
+     * User: "Urgent meeting tomorrow" → {{"title": "Meeting", "priority": "High", "reminder_time": "2024-01-17T10:00:00"}}
+     * User: "Grocery leni hai aaram se" → {{"title": "Grocery leni hai", "priority": "Low"}}
+     * User: "Task add karo: Call mom" → {{"title": "Call mom", "priority": "Normal"}}
    - For `update_task`/`delete_task`: Use ID. If user says "Delete the gym task", look up the ID from "User's Current Tasks" context first. If ambiguous, ask "Kaunsa wala? ID 3 ya ID 5?"
 
 6. **RESPONSE STYLE**:
