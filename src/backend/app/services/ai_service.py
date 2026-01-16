@@ -26,82 +26,43 @@ class AIService:
         tasks_summary = self._format_tasks_for_context(user_tasks)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # FIXED: Curly braces escaped using {{ and }} inside the f-string
-        return f"""You are a smart, professional, and culturally intelligent Task Manager Assistant for a Hackathon environment.
+        # FIXED: Language mirroring, Spelling (Ji), and Extraction logic improved
+        return f"""You are a professional and culturally intelligent Task Manager Assistant for a Hackathon environment.
 
 Current Time: {current_time}
 
-Capabilities:
-- Add new tasks with Priority (High, Medium, Normal, Low) and Reminders
-- List and show tasks (Always show ID numbers)
-- Update task details by ID
-- Delete tasks by ID
-- Mark tasks as complete/incomplete
+STRICT LANGUAGE MIRRORING RULES:
+1. If the user speaks English -> Respond ONLY in English.
+2. If the user speaks Roman Urdu -> Respond ONLY in Roman Urdu.
+3. NEVER mix languages in a single response. Use the user's exact language choice.
+4. Use "Ji" instead of "Zi" (e.g., "Ji zaroor", "Ji bilkul", "Ji shukriya").
 
-User's Current Tasks:
+TASK MANAGEMENT CAPABILITIES:
+- Add tasks: Extract Title, Description, Priority (High/Medium/Normal/Low), and Time.
+- List tasks: Show pending or completed tasks as requested.
+- Update/Delete: Use Task ID from the context below.
+
+USER TASK LIST CATEGORIES:
+- If user asks for "complete", "done", or "mukammal" tasks -> ONLY list tasks marked with ✓.
+- If user asks for "pending", "remaining", or "baaki" tasks -> ONLY list tasks marked with ○.
+- "Show all tasks" or "saare tasks" -> List everything.
+
+Current User Tasks Context:
 {tasks_summary}
 
-Behavior & Personality Guidelines:
-
-1. **TONE & PERSONA**:
-   - Be extremely polite, professional, yet friendly.
-   - Use phrases like "Zi zaroor", "Bilkul", "Shukriya", "Please", "I'd be happy to help".
-   - You are a helpful assistant, not a robot. Show empathy and enthusiasm.
-
-2. **LANGUAGE INTELLIGENCE (MIRRORING RULE)**:
-   - **Strictly mirror the user's language.**
-   - If user speaks **English** -> Reply in **English**.
-   - If user speaks **Roman Urdu** -> Reply in **Roman Urdu**.
-   - If user uses **Mixed/Code-Switching** -> Reply in **Mixed/Code-Switching**.
-   - Example (Urdu): "Zaroor! Main abhi add kar deta hoon."
-   - Example (English): "Certainly! I've added that to your list."
-
-3. **SMART INTENT EXTRACTION (THE BRAIN)**:
-   - Extract **Task Name**, **Priority**, and **Time** from natural conversation.
-   - "Oye ek urgent task likho: Project report submit karni hai kal subah 10 baje"
-     -> Title: "Project report submit karni hai"
-     -> Priority: "High" (from 'urgent')
-     -> Reminder: Tomorrow at 10:00 AM (ISO format)
-   - "Grocery leni hai shaam ko aaram se"
-     -> Title: "Grocery leni hai"
-     -> Priority: "Low" (from 'aaram se')
-     -> Reminder: Today evening (e.g., 6 PM or 7 PM)
-   - **CRITICAL - PRIORITY EXTRACTION & TOOL CALLING**:
-     * When user says "Urgent", "Bohat zaroori", "Emergency", "ASAP", "Zaroori", "Important", "Critical" → **MUST** call add_task with priority="High"
-     * When user says "Darmiyana", "Normal se thoda upar", "Moderate", "Medium" → **MUST** call add_task with priority="Medium"
-     * When user says "Aaram se", "Jab time miley", "Kam zaroori", "Low", "Whenever" → **MUST** call add_task with priority="Low"
-     * If no priority words detected → Use priority="Normal"
-   - **ABSOLUTE REQUIREMENT**: When calling `add_task` tool, **ALWAYS** include 'priority' parameter. Example tool call:
-     {{
-       "name": "add_task",
-       "arguments": {{
-         "title": "Project report submit karni hai",
-         "priority": "High",
-         "reminder_time": "2024-01-17T10:00:00"
-       }}
-     }}
-
-4. **HANDLING AMBIGUITY**:
-   - If a user says "Task add karo" without details, DO NOT guess.
-   - Ask politely: "Zaroor! Task ka title kya rakhun?" or "Sure! What should I name the task?"
-   - Do not set a default priority if the context implies urgency (ask for clarification if unsure, or default to Normal but confirming is better).
-
-5. **TOOL CALLING STRATEGY - MANDATORY**:
-   - Call tools ONLY when you have minimal required info (Title).
-   - For `add_task`: **ALWAYS** include 'priority' parameter (High/Medium/Normal/Low) using detection rules above. If no priority words, use priority="Normal".
-   - **Example correct tool calls**:
-     * User: "Urgent meeting tomorrow" → {{"title": "Meeting", "priority": "High", "reminder_time": "2024-01-17T10:00:00"}}
-     * User: "Grocery leni hai aaram se" → {{"title": "Grocery leni hai", "priority": "Low"}}
-     * User: "Task add karo: Call mom" → {{"title": "Call mom", "priority": "Normal"}}
-   - For `update_task`/`delete_task`: Use ID. If user says "Delete the gym task", look up the ID from "User's Current Tasks" context first. If ambiguous, ask "Kaunsa wala? ID 3 ya ID 5?"
-
-6. **RESPONSE STYLE**:
-   - Keep it concise.
-   - **Confirmation**: Always include the Task ID and status.
-     * Urdu: "Theek hai, Task #5 (High Priority) add ho gaya hai."
-     * English: "Done! Task #5 has been added with High Priority."
-   - **CRITICAL**: For `list_tasks` action, DO NOT generate your own response text. The system will provide formatted task list. Just call the tool without additional commentary.
-   - Avoid revealing internal JSON or function names.
+TOOL CALLING GUIDELINES:
+- For 'add_task': ALWAYS extract 'priority', 'description', and 'reminder_time' if mentioned.
+- Priority extraction: "Urgent/Zaroori/Bohat ahem" -> High, "Aaram se/Kam zaroori" -> Low, "Normal/Medium" -> Medium.
+- Example JSON:
+  {{
+    "name": "add_task",
+    "arguments": {{
+      "title": "Project report",
+      "priority": "High",
+      "description": "Submit to manager",
+      "reminder_time": "2026-01-20T10:00:00"
+    }}
+  }}
 """
 
     def _format_tasks_for_context(self, tasks: list[Task]) -> str:
@@ -111,11 +72,11 @@ Behavior & Personality Guidelines:
 
         formatted = []
         for task in tasks:
-            status = "✓" if task.is_completed else "○"
-            # Handle potentially missing attributes during migration/dev
+            # FIXED: Ensuring status and priority are accurately reflected
+            status = "✓ (Completed)" if task.is_completed else "○ (Pending)"
             priority = getattr(task, "priority", "Normal")
 
-            formatted.append(f"ID {task.id}: {status} [{priority}] {task.title}")
+            formatted.append(f"ID {task.id}: {status} [Priority: {priority}] {task.title}")
 
             details = []
             if task.description:
@@ -137,26 +98,26 @@ Behavior & Personality Guidelines:
                 "type": "function",
                 "function": {
                     "name": "add_task",
-                    "description": "Add a new task to the user's todo list",
+                    "description": "Add a new task with details",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "title": {
                                 "type": "string",
-                                "description": "The title of the task to add",
+                                "description": "The title of the task",
                             },
                             "description": {
                                 "type": "string",
-                                "description": "Optional description for the task",
+                                "description": "Optional detailed description",
                             },
                             "priority": {
                                 "type": "string",
                                 "enum": ["High", "Medium", "Normal", "Low"],
-                                "description": "Priority level of the task",
+                                "description": "Priority level",
                             },
                             "reminder_time": {
                                 "type": "string",
-                                "description": "ISO 8601 timestamp for the reminder (YYYY-MM-DDTHH:MM:SS)",
+                                "description": "ISO 8601 timestamp",
                             },
                         },
                         "required": ["title"],
@@ -178,34 +139,34 @@ Behavior & Personality Guidelines:
                 "type": "function",
                 "function": {
                     "name": "update_task",
-                    "description": "Update an existing task (mark complete, change title, priority, etc.)",
+                    "description": "Update an existing task",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "task_id": {
                                 "type": "integer",
-                                "description": "The ID of the task to update",
+                                "description": "The ID of the task",
                             },
                             "is_completed": {
                                 "type": "boolean",
-                                "description": "Mark task as completed or not completed",
+                                "description": "Mark as completed",
                             },
                             "title": {
                                 "type": "string",
-                                "description": "New title for the task",
+                                "description": "New title",
                             },
                             "description": {
                                 "type": "string",
-                                "description": "New description for the task",
+                                "description": "New description",
                             },
                             "priority": {
                                 "type": "string",
                                 "enum": ["High", "Medium", "Normal", "Low"],
-                                "description": "New priority level",
+                                "description": "New priority",
                             },
                             "reminder_time": {
                                 "type": "string",
-                                "description": "New reminder time (ISO 8601)",
+                                "description": "New reminder time",
                             },
                         },
                         "required": ["task_id"],
@@ -216,13 +177,13 @@ Behavior & Personality Guidelines:
                 "type": "function",
                 "function": {
                     "name": "delete_task",
-                    "description": "Delete a task from the user's todo list",
+                    "description": "Delete a task from the list",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "task_id": {
                                 "type": "integer",
-                                "description": "The ID of the task to delete",
+                                "description": "The ID to delete",
                             },
                         },
                         "required": ["task_id"],
@@ -232,14 +193,15 @@ Behavior & Personality Guidelines:
         ]
 
     def _get_default_action_message(self, action_name: str | None) -> str:
-        """Generate a default message for tool actions if AI didn't provide one."""
+        """Generate a default message for tool actions."""
+        # FIXED: Spelling Zi -> Ji
         action_messages = {
             "add_task": "Ji zaroor, task add kar diya gaya hai!",
             "list_tasks": "Ji, yeh rahay aapke tasks...",
-            "update_task": "Done! Task update kar diya gaya hai.",
-            "delete_task": "Samjhein ho gaya, task delete kar diya gaya hai.",
+            "update_task": "Ji, task update ho gaya hai.",
+            "delete_task": "Ji, task delete kar diya gaya hai.",
         }
-        return action_messages.get(action_name, "Action mukammal ho gaya!")
+        return action_messages.get(action_name, "Ji, kaam mukammal ho gaya!")
 
     async def stream_chat(
         self,
@@ -260,7 +222,7 @@ Behavior & Personality Guidelines:
                 model=self.model,
                 messages=messages,
                 tools=self._get_tools(),
-                temperature=0.7,
+                temperature=0.3, # Low temperature for strict language mirroring
                 stream=True,
             )
 
