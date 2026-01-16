@@ -23,7 +23,7 @@ async def chat(
     db: Session = Depends(get_db),
     ai_service: AIService = Depends(get_ai_service),
 ):
-    """Send a message to the AI chatbot (Streaming)."""
+    """Send a message to the AI chatbot (Standard JSON Response)."""
     # Get user's current tasks for context
     user_tasks = task_crud.get_tasks_for_user(db, current_user.id)
 
@@ -33,83 +33,62 @@ async def chat(
     # Save user message
     chat_crud.save_chat_message(db, current_user.id, "user", message_in.message)
 
-    async def event_generator():
-        full_content = ""
-        action_name = None
-        action_data = None
+    # Variables to collect stream data internally
+    full_content = ""
+    action_name = None
+    action_data = None
 
-        # Prepare history format
-        history_dicts = [{"role": msg.role, "content": msg.content} for msg in chat_history]
+    # Prepare history format
+    history_dicts = [{"role": msg.role, "content": msg.content} for msg in chat_history]
 
-        async for event_str in ai_service.stream_chat(
-            user_message=message_in.message,
-            user_tasks=user_tasks,
-            chat_history=history_dicts,
-        ):
-            try:
-                event = json.loads(event_str)
+    # Process AI stream internally to avoid blank bubbles on frontend
+    async for event_str in ai_service.stream_chat(
+        user_message=message_in.message,
+        user_tasks=user_tasks,
+        chat_history=history_dicts,
+    ):
+        try:
+            event = json.loads(event_str)
 
-                if event["type"] == "token":
-                    full_content += event["content"]
-                    yield event_str
+            if event["type"] == "token":
+                full_content += event["content"]
 
-                elif event["type"] == "tool_call":
-                    action_name = event["name"]
-                    yield json.dumps({"type": "status", "content": "Processing..."}) + "\n"
+            elif event["type"] == "tool_call":
+                action_name = event["name"]
+                
+                # Debug log for priority extraction
+                if action_name == "add_task":
+                    print(f"[DEBUG] add_task arguments: {event['arguments']}")
+                    print(f"[DEBUG] Priority in args: {event['arguments'].get('priority', 'NOT FOUND')}")
 
-                    # Debug log for priority extraction
-                    if action_name == "add_task":
-                        print(f"[DEBUG] add_task arguments: {event['arguments']}")
-                        print(f"[DEBUG] Priority in args: {event['arguments'].get('priority', 'NOT FOUND')}")
+                action_result = await _execute_tool_action(
+                    event["name"],
+                    event["arguments"],
+                    current_user.id,
+                    db,
+                )
+                action_data = action_result
 
-                    action_result = await _execute_tool_action(
-                        event["name"],
-                        event["arguments"],
-                        current_user.id,
-                        db,
-                    )
-                    action_data = action_result
+                # For list_tasks, send the formatted tasks as content
+                if event["name"] == "list_tasks" and action_result.get("formatted_tasks"):
+                    full_content += "\n" + action_result["formatted_tasks"]
 
-                    # For list_tasks, send the formatted tasks as content
-                    if event["name"] == "list_tasks" and action_result.get("formatted_tasks"):
-                        yield json.dumps({
-                            "type": "token",
-                            "content": "\n" + action_result["formatted_tasks"]
-                        }) + "\n"
+            elif event["type"] == "error":
+                print(f"[AI ERROR] {event.get('content')}")
 
-                    yield json.dumps({
-                        "type": "action_result",
-                        "action_taken": event["name"],
-                        "action_result": action_result
-                    }) + "\n"
+        except Exception as e:
+            print(f"[STREAM ERROR] {str(e)}")
 
-                elif event["type"] == "error":
-                    # Pass error to client
-                    yield event_str
+    # Save assistant message to DB after processing finishes
+    final_msg = full_content.strip()
+    if not final_msg and action_name:
+        final_msg = ai_service._get_default_action_message(action_name)
 
-            except Exception as e:
-                print(f"[STREAM ERROR] {str(e)}")
+    if final_msg:
+        chat_crud.save_chat_message(db, current_user.id, "assistant", final_msg)
 
-        # Save assistant message to DB after stream finishes
-        # Check if we have content or action
-        final_msg = full_content.strip()
-        if not final_msg and action_name:
-            # Generate fallback if no text but action was taken
-            # We can use the service helper if accessible, or just hardcode for speed
-            # ai_service._get_default_action_message is private but we can access or duplicate
-            # Accessing protected member is discouraged but ok for internal usage
-            final_msg = ai_service._get_default_action_message(action_name)
-
-        if final_msg:
-            # If we calculated a fallback, we should probably send it to client as a token?
-            # But the stream is ending. The client might miss it if logic expects tokens.
-            # We can yield it as a token if full_content was empty!
-            if not full_content.strip():
-                 yield json.dumps({"type": "token", "content": final_msg}) + "\n"
-
-            chat_crud.save_chat_message(db, current_user.id, "assistant", final_msg)
-
-    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+    # Return standard JSON instead of StreamingResponse
+    return {"role": "assistant", "content": final_msg, "action_taken": action_name}
 
 
 async def _execute_tool_action(
@@ -154,19 +133,21 @@ async def _execute_tool_action(
                 for i, task in enumerate(tasks, 1):
                     status_symbol = "[Done]" if task.is_completed else "[Pending]"
                     priority_text = ""
-                    if task.priority == "High":
-                        priority_text = "[Urgent]"
-                    elif task.priority == "Medium":
-                        priority_text = "[Medium]"
-                    elif task.priority == "Low":
-                        priority_text = "[Low]"
-                    elif task.priority == "Normal":
-                        priority_text = "[Normal]"
+                    if hasattr(task, 'priority'):
+                        if task.priority == "High":
+                            priority_text = "[Urgent]"
+                        elif task.priority == "Medium":
+                            priority_text = "[Medium]"
+                        elif task.priority == "Low":
+                            priority_text = "[Low]"
+                        elif task.priority == "Normal":
+                            priority_text = "[Normal]"
 
                     line = f"{i}. ID {task.id}: {task.title} {priority_text} {status_symbol}"
                     if task.description:
                         line += f"\n   Description: {task.description}"
-                    if task.reminder_time and not task.is_completed:
+                    
+                    if hasattr(task, 'reminder_time') and task.reminder_time and not task.is_completed:
                         from datetime import datetime
                         reminder_str = task.reminder_time.strftime("%b %d, %I:%M %p") if isinstance(task.reminder_time, datetime) else str(task.reminder_time)
                         line += f"\n   Reminder: {reminder_str}"
@@ -224,6 +205,7 @@ async def _execute_tool_action(
 
         return {"success": False, "error": f"Unknown action: {action}"}
     except Exception as e:
+        print(f"[TOOL ERROR] {str(e)}")
         return {"success": False, "error": str(e)}
 
 

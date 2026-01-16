@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING  # Type checking ke liye import karein
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
+# Circular import se bachne ke liye sirf type checking ke waqt User import karein
+if TYPE_CHECKING:
+    from app.models.user import User
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -27,4 +31,5 @@ class Task(Base):
         nullable=False,
     )
 
+    # Relationship string format mein hi rahegi
     owner: Mapped["User"] = relationship(back_populates="tasks")
