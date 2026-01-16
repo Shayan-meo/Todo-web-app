@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "sonner";
 import Link from "next/link";
+import { Linkedin } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,6 +53,15 @@ export default function RootLayout({
                     >
                       Dashboard
                     </Link>
+                    <a
+                      href="https://www.linkedin.com/in/tabraiz-haider-a2a4942a9?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-muted-foreground transition-colors hover:text-indigo-400 hover:scale-110"
+                      aria-label="LinkedIn Profile"
+                    >
+                      <Linkedin className="h-5 w-5" />
+                    </a>
                     <ThemeToggle />
                   </nav>
                 </div>

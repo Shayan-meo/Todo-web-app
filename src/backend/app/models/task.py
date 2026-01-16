@@ -16,6 +16,9 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, default=None)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    priority: Mapped[str] = mapped_column(String(50), default="Normal", nullable=False)
+    reminder_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

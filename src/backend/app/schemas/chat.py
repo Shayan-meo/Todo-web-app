@@ -17,6 +17,6 @@ class ChatMessageRead(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message: str
+    message: str = "No message"  # Default to ensure it's never truly empty
     action_taken: str | None = None
     action_result: dict | None = None

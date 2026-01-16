@@ -59,72 +59,100 @@ export function AIChatbot() {
     setIsLoading(true);
 
     try {
-      const response = await chatApi.sendMessage(message);
+      // 1. Setup optimistic assistant message
+      const assistantId = Date.now() + 1;
+      const assistantMessage: ChatMessage = {
+        id: assistantId,
+        user_id: 0,
+        role: "assistant",
+        content: "", // Content will stream in
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
 
-      // DEBUG: Log full response to console
-      console.log("AI Response:", response.data);
+      // 2. Start Streaming Request
+      const token = localStorage.getItem("todo_token");
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-      // Extract message with fallback
-      let messageContent = response.data.message || response.data.response || "";
+      const response = await fetch(`${BASE_URL}/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
+      });
 
-      // If message is empty or whitespace only, provide fallback
-      if (!messageContent || !messageContent.trim()) {
-        console.warn("Empty message from AI, using fallback");
-        messageContent = "Ji, main samajh nahi paya. Dobara bolye ga?";
-      }
+      if (!response.ok) throw new Error("Network response was not ok");
+      if (!response.body) throw new Error("No response body");
 
-      // Show toast notification ONLY for successful database actions
-      if (response.data.action_taken && response.data.action_result?.success !== false) {
-        // Only show toast for actual database mutations (not list_tasks which is just a read)
-        const dbMutationActions = ["add_task", "update_task", "delete_task"];
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
 
-        if (dbMutationActions.includes(response.data.action_taken)) {
-          const actionMessages: Record<string, string> = {
-            add_task: "Task Added",
-            update_task: "Task Updated",
-            delete_task: "Task Deleted",
-          };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          toast.success(actionMessages[response.data.action_taken] || "Done!", {
-            duration: 2000,
-          });
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
 
-          // Trigger tasks refresh after mutation
-          if (typeof window !== "undefined") {
-            // Dispatch custom event to notify dashboard of new/updated tasks
-            window.dispatchEvent(
-              new CustomEvent("tasksUpdated", {
-                detail: { action: response.data.action_taken },
-              })
-            );
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+
+            if (event.type === "token") {
+              accumulatedContent += event.content;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantId ? { ...msg, content: accumulatedContent } : msg
+                )
+              );
+            } else if (event.type === "action_result") {
+              // Handle database mutations (notifications & refresh)
+              const dbMutationActions = ["add_task", "update_task", "delete_task"];
+
+              if (event.action_taken && dbMutationActions.includes(event.action_taken)) {
+                const actionMessages: Record<string, string> = {
+                  add_task: "Task Added",
+                  update_task: "Task Updated",
+                  delete_task: "Task Deleted",
+                };
+
+                toast.success(actionMessages[event.action_taken] || "Action Completed", {
+                  duration: 2000,
+                });
+
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("tasksUpdated", {
+                      detail: { action: event.action_taken },
+                    })
+                  );
+                }
+              }
+            } else if (event.type === "error") {
+               console.error("Stream Error:", event.content);
+               toast.error("Error from AI: " + event.content);
+            }
+          } catch (e) {
+            console.warn("Failed to parse stream chunk:", line);
           }
         }
       }
-
-      const assistantMessage: ChatMessage = {
-        id: Date.now() + 1,
-        user_id: 0,
-        role: "assistant",
-        content: messageContent,
-        created_at: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error("Failed to send message:", error);
-      toast.error("Oops! Something went wrong", {
-        description: "Please try again",
-        duration: 3000,
-      });
+      toast.error("Oops! Something went wrong");
 
-      const errorMessage: ChatMessage = {
-        id: Date.now() + 1,
-        user_id: 0,
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      // Update the empty message to show error
+      setMessages((prev) =>
+        prev.map((msg, i) =>
+          i === prev.length - 1 && msg.role === "assistant" && !msg.content
+            ? { ...msg, content: "Sorry, connection failed. Please try again." }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -157,12 +185,26 @@ export function AIChatbot() {
       {/* Chat Button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 group"
+        className="fixed bottom-6 right-6 z-50 group"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
+        animate={{
+          boxShadow: [
+            "0 0 0 0 rgba(99, 102, 241, 0)",
+            "0 0 0 10px rgba(99, 102, 241, 0.4)",
+            "0 0 0 20px rgba(99, 102, 241, 0)"
+          ]
+        }}
+        transition={{
+          boxShadow: {
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "loop"
+          }
+        }}
         aria-label="Open AI Chat"
       >
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-xl shadow-indigo-500/50 backdrop-blur-xl border border-white/20 transition-all">
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-xl shadow-indigo-500/50 backdrop-blur-md border border-white/20">
           <Sparkles className="h-6 w-6" />
         </div>
       </motion.button>

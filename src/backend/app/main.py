@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.base import init_db
+from app.services.reminder_service import start_reminder_loop
 
 
 @asynccontextmanager
@@ -13,11 +15,22 @@ async def lifespan(app: FastAPI):
     """
     Application lifespan manager.
     Initializes database tables on startup.
+    Starts background tasks.
     """
     # Startup
     init_db()
+
+    # Start notification scheduler
+    scheduler_task = asyncio.create_task(start_reminder_loop())
+
     yield
-    # Shutdown (no cleanup needed for this simple app)
+
+    # Shutdown
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        pass
 
 
 def create_app() -> FastAPI:

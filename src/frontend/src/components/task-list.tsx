@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dayjs from "dayjs";
-import { CheckCircle2, Circle, Edit, Trash2, Clock } from "lucide-react";
+import { CheckCircle2, Circle, Edit, Trash2, Clock, Flag, Bell } from "lucide-react";
 import { Task } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,28 +24,83 @@ const taskVariants = {
   exit: { opacity: 0, x: -20 },
 };
 
+import { ClipboardList } from "lucide-react";
+
+// ... existing imports
+
 export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskListProps) {
   const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => Number(a.is_completed) - Number(b.is_completed));
+    // Sort logic:
+    // 1. Incomplete tasks first
+    // 2. High priority > Medium > Normal > Low
+    // 3. Newest created first (as tie-breaker)
+
+    // Priority weight map (higher is more important)
+    const priorityWeight: Record<string, number> = {
+      "High": 4,
+      "Medium": 3,
+      "Normal": 2,
+      "Low": 1
+    };
+
+    return [...tasks].sort((a, b) => {
+      // 1. Completion status
+      if (a.is_completed !== b.is_completed) {
+        return Number(a.is_completed) - Number(b.is_completed); // 0 (incomplete) before 1 (complete)
+      }
+
+      // 2. Priority (only for incomplete tasks usually, but useful for history too)
+      const weightA = priorityWeight[a.priority || "Normal"] || 2;
+      const weightB = priorityWeight[b.priority || "Normal"] || 2;
+
+      if (weightA !== weightB) {
+        return weightB - weightA; // Higher weight first
+      }
+
+      // 3. Date (Newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }, [tasks]);
+
+  const getPriorityBadge = (priority?: string) => {
+    switch(priority) {
+      case "High":
+        return <span className="inline-flex items-center gap-1 rounded-full bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-400 border border-red-500/20">High</span>;
+      case "Medium":
+        return <span className="inline-flex items-center gap-1 rounded-full bg-orange-900/40 px-2 py-0.5 text-xs font-medium text-orange-400 border border-orange-500/20">Medium</span>;
+      case "Low":
+        return <span className="inline-flex items-center gap-1 rounded-full bg-blue-900/40 px-2 py-0.5 text-xs font-medium text-blue-400 border border-blue-500/20">Low</span>;
+      default:
+        return null;
+    }
+  };
 
   if (!tasks.length) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="rounded-xl border-2 border-dashed bg-card/50 p-12 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-12 text-center"
       >
-        <Circle className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-        <p className="text-lg font-medium text-foreground">Sukoon hi sukoon! Koi pending task nahi hai.</p>
-        <p className="text-sm text-muted-foreground/70 mt-1">Create your first task to get started!</p>
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
+            <ClipboardList className="relative h-16 w-16 text-indigo-400" />
+          </div>
+        </div>
+        <h3 className="text-2xl font-bold tracking-tight text-slate-100 mb-2">
+          No tasks found
+        </h3>
+        <p className="text-slate-400 max-w-[300px] mx-auto mb-6">
+          Your productivity journey starts here. Add your first task to stay organized.
+        </p>
       </motion.div>
     );
   }
 
   return (
     <AnimatePresence mode="popLayout">
-      <ul className="space-y-3">
+      <ul className="space-y-4">
         {sortedTasks.map((task, index) => (
           <motion.li
             key={task.id}
@@ -56,7 +111,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
             transition={{ delay: index * 0.05 }}
             layout
           >
-            <Card className={`glass-card transition-all hover:scale-[1.01] ${
+            <Card className={`border-slate-800 bg-slate-900/40 transition-all hover:-translate-y-[2px] hover:shadow-lg hover:shadow-indigo-500/10 ${
               task.is_completed ? "opacity-60" : ""
             }`}>
               <CardContent className="p-4">
@@ -64,7 +119,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="mt-1 flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                    className="mt-1 flex-shrink-0 text-slate-500 hover:text-indigo-400 transition-colors"
                     onClick={() => onToggleComplete(task.id, !task.is_completed)}
                     aria-label={task.is_completed ? "Mark incomplete" : "Mark complete"}
                   >
@@ -77,14 +132,22 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className={`font-semibold transition-all ${
-                        task.is_completed
-                          ? "line-through text-muted-foreground"
-                          : "text-foreground"
-                      }`}>
-                        {task.title}
-                      </h3>
-                      <span className="flex-shrink-0 text-xs text-muted-foreground flex items-center gap-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                            #{task.id}
+                          </span>
+                          <h3 className={`font-semibold transition-all ${
+                            task.is_completed
+                              ? "line-through text-slate-500"
+                              : "text-slate-100"
+                          }`}>
+                            {task.title}
+                          </h3>
+                          {getPriorityBadge(task.priority)}
+                        </div>
+                      </div>
+                      <span className="flex-shrink-0 text-xs text-slate-500 flex items-center gap-1 whitespace-nowrap ml-2">
                         <Clock className="h-3 w-3" />
                         {dayjs(task.updated_at).format("MMM D, HH:mm")}
                       </span>
@@ -93,18 +156,25 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                     {task.description && (
                       <p className={`mt-2 text-sm transition-all ${
                         task.is_completed
-                          ? "text-muted-foreground/60"
-                          : "text-muted-foreground"
+                          ? "text-slate-600"
+                          : "text-slate-400"
                       }`}>
                         {task.description}
                       </p>
+                    )}
+
+                    {task.reminder_time && !task.is_completed && (
+                      <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-500/90">
+                        <Bell className="h-3.5 w-3.5" />
+                        <span>Remind: {dayjs(task.reminder_time).format("MMM D, h:mm A")}</span>
+                      </div>
                     )}
 
                     <div className="mt-3 flex gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 gap-1 text-muted-foreground hover:text-foreground"
+                        className="h-8 gap-1 text-slate-500 hover:text-slate-100 hover:bg-slate-800"
                         onClick={() => onEdit(task)}
                       >
                         <Edit className="h-4 w-4" />
@@ -113,7 +183,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 gap-1 text-slate-500 hover:text-red-400 hover:bg-red-900/20"
                         onClick={() => onDelete(task.id)}
                       >
                         <Trash2 className="h-4 w-4" />

@@ -1,3 +1,4 @@
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
@@ -5,7 +6,16 @@ from app.schemas.task import TaskCreate, TaskUpdate
 
 
 def get_tasks_for_user(db: Session, user_id: int) -> list[Task]:
-    return db.query(Task).filter(Task.user_id == user_id).order_by(Task.created_at.desc()).all()
+    # Custom sort order for priority
+    priority_order = case(
+        (Task.priority == "High", 1),
+        (Task.priority == "Medium", 2),
+        (Task.priority == "Normal", 3),
+        (Task.priority == "Low", 4),
+        else_=5
+    )
+
+    return db.query(Task).filter(Task.user_id == user_id).order_by(priority_order, Task.created_at.desc()).all()
 
 
 def get_task(db: Session, task_id: int, user_id: int) -> Task | None:

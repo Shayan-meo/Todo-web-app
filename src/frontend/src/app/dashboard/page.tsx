@@ -81,12 +81,12 @@ export default function DashboardPage() {
     }
   };
 
-  const handleAddTask = async (values: { title: string; description?: string }) => {
+  const handleAddTask = async (values: { title: string; description?: string; priority?: string }) => {
     const response = await apiClient.post<Task>("/tasks", values);
     setTasks((prev) => [response.data, ...prev]);
   };
 
-  const handleUpdateTask = async (values: { title: string; description?: string }) => {
+  const handleUpdateTask = async (values: { title: string; description?: string; priority?: string }) => {
     if (!editingTask) return;
     const response = await apiClient.put<Task>(`/tasks/${editingTask.id}`, values);
     setTasks((prev) => prev.map((task) => (task.id === editingTask.id ? response.data : task)));
@@ -215,8 +215,6 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-        {/* WhatsApp Contact Button */}
-        <WhatsAppButton />
         {/* AI Chatbot */}
         <AIChatbot />
         <div className="max-w-7xl mx-auto space-y-6">
@@ -339,7 +337,15 @@ export default function DashboardPage() {
                 <CardContent>
                   <TaskForm
                     key={editingTask?.id || "new"}
-                    initialValues={editingTask ? { title: editingTask.title, description: editingTask.description || "" } : undefined}
+                    initialValues={
+                      editingTask
+                        ? {
+                            title: editingTask.title,
+                            description: editingTask.description || "",
+                            priority: (editingTask.priority as "High" | "Medium" | "Normal" | "Low") || "Normal",
+                          }
+                        : undefined
+                    }
                     onSubmit={editingTask ? handleUpdateTask : handleAddTask}
                     submitLabel={editingTask ? "Update Task" : "Add Task"}
                   />
