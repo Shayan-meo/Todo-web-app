@@ -65,11 +65,50 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
   const getPriorityBadge = (priority?: string) => {
     switch(priority) {
       case "High":
-        return <span className="inline-flex items-center gap-1 rounded-full bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-400 border border-red-500/20">High</span>;
+        return (
+          <motion.div
+            animate={{
+              boxShadow: [
+                "0 0 0px rgba(239, 68, 68, 0)",
+                "0 0 20px rgba(239, 68, 68, 0.7)",
+                "0 0 0px rgba(239, 68, 68, 0)"
+              ]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="relative"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-rose-500/30 to-pink-500/30 rounded-full blur-lg animate-pulse" />
+            <div className="relative inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-rose-300/90 border border-white/10">
+              <div className="h-1.5 w-1.5 rounded-full bg-rose-400/90 mr-1.5" />
+              High Priority
+            </div>
+          </motion.div>
+        );
       case "Medium":
-        return <span className="inline-flex items-center gap-1 rounded-full bg-orange-900/40 px-2 py-0.5 text-xs font-medium text-orange-400 border border-orange-500/20">Medium</span>;
+        return (
+          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300/90 border border-amber-500/30">
+            <div className="h-1.5 w-1.5 rounded-full bg-amber-400/90 mr-1.5" />
+            Medium Priority
+          </div>
+        );
+      case "Normal":
+        return (
+          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 border border-slate-600/30">
+            <div className="h-1.5 w-1.5 rounded-full bg-slate-500 mr-1.5" />
+            Normal Priority
+          </div>
+        );
       case "Low":
-        return <span className="inline-flex items-center gap-1 rounded-full bg-blue-900/40 px-2 py-0.5 text-xs font-medium text-blue-400 border border-blue-500/20">Low</span>;
+        return (
+          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400/90 border border-blue-500/30">
+            <div className="h-1.5 w-1.5 rounded-full bg-blue-400/90 mr-1.5" />
+            Low Priority
+          </div>
+        );
       default:
         return null;
     }
@@ -111,8 +150,16 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
             transition={{ delay: index * 0.05 }}
             layout
           >
-            <Card className={`border-slate-800 bg-slate-900/40 transition-all hover:-translate-y-[2px] hover:shadow-lg hover:shadow-indigo-500/10 ${
+            <Card className={`relative overflow-hidden border-slate-800 bg-slate-900/40 transition-all hover:-translate-y-[2px] hover:shadow-lg hover:shadow-indigo-500/10 ${
               task.is_completed ? "opacity-60" : ""
+            } ${
+              task.priority === "High"
+                ? "border-l-4 border-l-rose-500 shadow-[0_0_25px_rgba(239,68,68,0.15)]"
+                : task.priority === "Medium"
+                ? "border-l-4 border-l-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                : task.priority === "Low"
+                ? "border-l-4 border-l-blue-500/70"
+                : "border-l-4 border-l-slate-700"
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">

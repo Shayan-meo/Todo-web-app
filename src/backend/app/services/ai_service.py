@@ -25,42 +25,120 @@ class AIService:
         )
         self.model = model
 
-    def _get_system_prompt(self, user_tasks: list[Task]) -> str:
+    def _detect_language(self, message: str) -> str:
         """
-        Generate a detailed system prompt with strict rules and task context.
-        Ensures the AI behaves according to hackathon requirements.
+        Neural Language Detection based on first 3 words.
+        Returns 'urdu' for Roman Urdu, 'english' for English.
         """
-        tasks_summary = self._format_tasks_for_context(user_tasks)
+        words = message.strip().split()[:3]
+        urdu_indicators = {'ji', 'ek', 'mujhe', 'bana', 'karo', 'kar', 'hai', 'nahi', 'zaroori', 'aaram'}
+
+        # Check if any of the first 3 words contain Urdu indicators
+        for word in words:
+            if word.lower() in urdu_indicators:
+                return "urdu"
+
+        # Default to English if no Urdu indicators found
+        return "english"
+
+    def _format_tasks_for_language(self, tasks: list[Task], language: str) -> str:
+        """
+        Format tasks with language-specific labels.
+        """
+        if not tasks:
+            return "No tasks yet." if language == "english" else "Koi task nahi hai."
+
+        formatted = []
+        for task in tasks:
+            status = "[STATUS: COMPLETED]" if task.is_completed else "[STATUS: PENDING]"
+            priority = getattr(task, "priority", "Normal")
+
+            if language == "urdu":
+                status_display = "Mukammal" if task.is_completed else "Baaki"
+                priority_display = {
+                    "High": "Bohat Zaroori",
+                    "Medium": "Darmiyani",
+                    "Normal": "Normal",
+                    "Low": "Kam Zaroori"
+                }.get(priority, "Normal")
+                line = f"ID: {task.id} | Halat: {status_display} | Tarjeeh: {priority_display} | {task.title}"
+            else:
+                status_display = "Completed" if task.is_completed else "Pending"
+                line = f"ID: {task.id} | Status: {status_display} | Priority: {priority} | {task.title}"
+
+            formatted.append(line)
+
+            details = []
+            if task.description:
+                if language == "urdu":
+                    details.append(f"Tafseel: {task.description}")
+                else:
+                    details.append(f"Description: {task.description}")
+
+            reminder = getattr(task, "reminder_time", None)
+            if reminder:
+                if language == "urdu":
+                    details.append(f"Yaad dilaany ka waqt: {reminder}")
+                else:
+                    details.append(f"Reminder: {reminder}")
+
+            if details:
+                formatted.append(f"   {' | '.join(details)}")
+
+        return "\n".join(formatted)
+
+    def _get_system_prompt(self, user_tasks: list[Task], detected_language: str) -> str:
+        """
+        Generate a detailed system prompt with strict language locking rules.
+        """
+        tasks_summary = self._format_tasks_for_language(user_tasks, detected_language)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # --- STRICT RULES FOR LANGUAGE AND EXTRACTION ---
-        return f"""You are a professional and culturally intelligent Task Manager Assistant.
+        # Language-specific opening based on detection
+        if detected_language == "urdu":
+            opening = "Ji, mein aik professional Urdu-speaking Task Manager Hoon. Mai bilkul aapki bhasha mein jawab doonga."
+            tone_instruction = "Tahzeeb se jawab dein lekin professional tareeqe se. 'Ji' istemal karein."
+            format_instruction = "ID: 33 | Halat: Baaki | Tarjeeh: Bohat Zaroori | Meeting"
+        else:
+            opening = "You are a professional, executive-grade Task Manager Assistant."
+            tone_instruction = "Use a professional, executive tone. DO NOT mix in any Urdu words."
+            format_instruction = "ID: 33 | Status: Pending | Priority: High | Meeting"
+
+        return f"""{opening}
 
 Current Time: {current_time}
 
-STRICT LANGUAGE MIRRORING RULES:
-1. If the user speaks English -> Respond ONLY in English.
-2. If the user speaks Roman Urdu -> Respond ONLY in Roman Urdu.
-3. NEVER mix languages in a single response. Use the user's exact language choice.
-4. Use "Ji" instead of "Zi" (e.g., "Ji zaroor", "Ji bilkul", "Ji shukriya").
+STRICT LANGUAGE LOCKING SYSTEM:
+1. ANALYSIS PHASE: Detected user language is {detected_language.upper()}.
+2. NEURAL LOCK: You are now LOCKED into {detected_language.upper()} mode.
+3. THE 'Ji' RULE: Always use 'Ji' instead of 'Zi' (e.g., 'Ji zaroor', 'Ji bilkul', 'Ji shukriya').
+4. ZERO MIXING: Under NO circumstances mix languages in a single sentence.
+5. {tone_instruction}
 
 TASK MANAGEMENT CAPABILITIES:
-- Add tasks: Extract Title, Description, Priority (High/Medium/Normal/Low), and Time.
+- Add tasks: Extract Title, Description, Priority (High/Normal/Low), and Time.
 - List tasks: Show pending or completed tasks as requested.
 - Update/Delete: Use Task ID from the context below.
 
-USER TASK LIST CATEGORIES (FILTERING):
-- If user asks for "complete", "done", or "mukammal" tasks -> ONLY list tasks marked with ✓.
-- If user asks for "pending", "remaining", or "baaki" tasks -> ONLY list tasks marked with ○.
-- "Show all tasks" or "saare tasks" -> List everything.
+USER TASK LIST CATEGORIES (STRICT FILTERING):
+- If user asks for 'complete', 'done', or 'mukammal' tasks -> FILTER to ONLY show COMPLETED tasks.
+- If user asks for 'pending', 'remaining', 'baaki', or 'incomplete' tasks -> FILTER to ONLY show PENDING tasks.
+- 'Show all' or 'saare' -> List everything.
 
-Current User Tasks Context:
+TASK FORMATTING ({detected_language.upper()} MODE):
 {tasks_summary}
+Example: {format_instruction}
 
-TOOL CALLING GUIDELINES:
-- For 'add_task': ALWAYS extract 'priority', 'description', and 'reminder_time' if mentioned.
-- Priority extraction: "Urgent/Zaroori/Bohat ahem" -> High, "Aaram se/Kam zaroori" -> Low, "Normal/Medium" -> Medium.
-- Default priority is "Normal" if no urgency is detected.
+PRIORITY EXTRACTION RULES:
+- 'Urgent', 'Zaroori', 'ASAP', 'Emergency' -> priority="High"
+- 'Aaram se', 'Low priority', 'Kam zaroori' -> priority="Low"
+- Everything else -> priority="Normal"
+- ALWAYS provide priority argument in add_task tool call.
+
+CONTEXT-AWARE RESPONSE:
+- Maintain language lock throughout conversation
+- If user switches languages, adapt immediately but stay consistent in each response
+- NEVER use mixed-language labels or formatting
 
 Example JSON Tool Call:
 {{
@@ -76,32 +154,10 @@ Example JSON Tool Call:
 
     def _format_tasks_for_context(self, tasks: list[Task]) -> str:
         """
-        Format user's tasks as a readable string for the AI's context.
-        Includes ID, Status, Priority, and Title.
+        DEPRECATED: Use _format_tasks_for_language instead.
+        Kept for backward compatibility.
         """
-        if not tasks:
-            return "No tasks yet."
-
-        formatted = []
-        for task in tasks:
-            # Ensuring status and priority are accurately reflected from database
-            status = "✓ (Completed)" if task.is_completed else "○ (Pending)"
-            priority = getattr(task, "priority", "Normal")
-
-            formatted.append(f"ID {task.id}: {status} [Priority: {priority}] {task.title}")
-
-            details = []
-            if task.description:
-                details.append(f"Desc: {task.description}")
-
-            reminder = getattr(task, "reminder_time", None)
-            if reminder:
-                details.append(f"Reminder: {reminder}")
-
-            if details:
-                formatted.append(f"   {' | '.join(details)}")
-
-        return "\n".join(formatted)
+        return self._format_tasks_for_language(tasks, "english")
 
     def _get_tools(self) -> list[dict[str, Any]]:
         """
@@ -113,7 +169,7 @@ Example JSON Tool Call:
                 "type": "function",
                 "function": {
                     "name": "add_task",
-                    "description": "Add a new task with details to the todo list",
+                    "description": "Add a new task with details to the todo list. MUST always include priority argument.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -127,15 +183,15 @@ Example JSON Tool Call:
                             },
                             "priority": {
                                 "type": "string",
-                                "enum": ["High", "Medium", "Normal", "Low"],
-                                "description": "Priority level based on urgency",
+                                "enum": ["High", "Normal", "Low"],
+                                "description": "MANDATORY: Priority level based on urgency detection",
                             },
                             "reminder_time": {
                                 "type": "string",
                                 "description": "ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS)",
                             },
                         },
-                        "required": ["title"],
+                        "required": ["title", "priority"],
                     },
                 },
             },
@@ -176,7 +232,7 @@ Example JSON Tool Call:
                             },
                             "priority": {
                                 "type": "string",
-                                "enum": ["High", "Medium", "Normal", "Low"],
+                                "enum": ["High", "Normal", "Low"],
                                 "description": "New priority level",
                             },
                             "reminder_time": {
@@ -207,19 +263,27 @@ Example JSON Tool Call:
             },
         ]
 
-    def _get_default_action_message(self, action_name: str | None) -> str:
+    def _get_default_action_message(self, action_name: str | None, language: str = "english") -> str:
         """
-        Provide a fallback message if the AI tool call succeeds but 
+        Provide a fallback message if the AI tool call succeeds but
         no specific content is generated.
         """
-        # FIXED spelling from Zi to Ji for cultural accuracy
-        action_messages = {
-            "add_task": "Ji zaroor, task add kar diya gaya hai!",
-            "list_tasks": "Ji, yeh rahay aapke tasks...",
-            "update_task": "Ji, task update ho gaya hai.",
-            "delete_task": "Ji, task delete kar diya gaya hai.",
-        }
-        return action_messages.get(action_name, "Ji, kaam mukammal ho gaya!")
+        if language == "urdu":
+            action_messages = {
+                "add_task": "Ji zaroor, task add kar diya gaya hai!",
+                "list_tasks": "Ji, yeh rahay aapke tasks...",
+                "update_task": "Ji, task update ho gaya hai.",
+                "delete_task": "Ji, task delete kar diya gaya hai.",
+            }
+            return action_messages.get(action_name, "Ji, kaam mukammal ho gaya!")
+        else:
+            action_messages = {
+                "add_task": "Task has been added successfully.",
+                "list_tasks": "Here are your tasks...",
+                "update_task": "Task has been updated.",
+                "delete_task": "Task has been deleted.",
+            }
+            return action_messages.get(action_name, "Operation completed successfully.")
 
     async def stream_chat(
         self,
@@ -232,8 +296,11 @@ Example JSON Tool Call:
         Sets temperature to 0.1 for maximum adherence to system rules.
         """
         messages = []
-        # Add system prompt with current context
-        messages.append({"role": "system", "content": self._get_system_prompt(user_tasks)})
+        # Detect language from first 3 words
+        detected_language = self._detect_language(user_message)
+
+        # Add system prompt with current context and language detection
+        messages.append({"role": "system", "content": self._get_system_prompt(user_tasks, detected_language)})
         
         # Add limited chat history for continuity
         if chat_history:

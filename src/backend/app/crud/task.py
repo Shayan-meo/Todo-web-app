@@ -23,7 +23,13 @@ def get_task(db: Session, task_id: int, user_id: int) -> Task | None:
 
 
 def create_task(db: Session, user_id: int, task_in: TaskCreate) -> Task:
-    task = Task(user_id=user_id, title=task_in.title, description=task_in.description)
+    task = Task(
+        user_id=user_id,
+        title=task_in.title,
+        description=task_in.description,
+        priority=task_in.priority,
+        reminder_time=task_in.reminder_time
+    )
     db.add(task)
     db.commit()
     db.refresh(task)
