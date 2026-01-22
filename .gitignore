@@ -62,3 +62,4 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+minikube-linux-amd64
