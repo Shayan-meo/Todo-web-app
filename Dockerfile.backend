@@ -25,7 +25,7 @@ WORKDIR /app/src/backend
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=${PORT:-8000}
+ENV PORT=8080
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
@@ -33,12 +33,12 @@ COPY --from=builder /install /usr/local
 # Copy application code
 COPY --from=builder /app/src/backend ./
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway uses 8080)
+EXPOSE 8080
 
-# Healthcheck for Kubernetes
+# Healthcheck for Railway/Kubernetes
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')" || exit 1
 
-# Run the app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the app - use shell form to expand $PORT
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

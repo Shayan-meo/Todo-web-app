@@ -1,34 +1,73 @@
-# Backend Dockerfile for FastAPI - Works with Railway build context
-FROM python:3.11-slim
+# =============================================================================
+# Backend Dockerfile - Multi-stage build for FastAPI
+# Base Image: python:3.11-slim with PostgreSQL support (libpq-dev)
+# =============================================================================
 
-# Set working directory
+# -----------------------------------------------------------------------------
+# Stage 1: Builder - Install dependencies and build wheels
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS builder
+
 WORKDIR /app
 
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PORT=${PORT:-8000}
-
-# Install system dependencies
+# Install build dependencies including libpq-dev for PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Install Poetry for dependency management
+RUN pip install --no-cache-dir poetry==1.8.2
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy dependency files
+COPY pyproject.toml poetry.lock* ./
 
-# Copy application code - works whether build context is root or src/backend
-COPY src/backend/ ./src/backend/
+# Configure Poetry to not create virtual environment and export to requirements
+RUN poetry config virtualenvs.create false \
+    && poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-# Expose port
-EXPOSE 8000
+# Install dependencies to a local directory for copying to production
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# -----------------------------------------------------------------------------
+# Stage 2: Production - Minimal runtime image
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS production
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+WORKDIR /app
+
+# Environment variables for Python optimization
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PORT=8080
+
+# Install runtime dependencies (libpq for psycopg PostgreSQL driver)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN groupadd --system --gid 1001 appgroup \
+    && useradd --system --uid 1001 --gid appgroup appuser
+
+# Copy installed Python packages from builder stage
+COPY --from=builder /install /usr/local
+
+# Copy application code
+COPY --chown=appuser:appgroup ./app ./app
+
+# Switch to non-root user
+USER appuser
+
+# Expose application port (Railway uses 8080)
+EXPOSE 8080
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || curl -f http://localhost:8080/api/health || exit 1
+
+# Run FastAPI with uvicorn - use shell form to expand $PORT
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

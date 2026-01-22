@@ -142,15 +142,30 @@ def create_app() -> FastAPI:
     @app.get("/", include_in_schema=False)
     def root():
         return {
-            "message": "Todo API is running",
+            "message": "AI Task Assistant API is running",
             "docs": f"{settings.api_prefix}/docs",
             "redoc": f"{settings.api_prefix}/redoc"
         }
 
-    # HEALTH CHECK: Railway automation ke liye zaroori rasta
+    # HEALTH CHECK: Root level for Railway/Docker healthchecks
+    @app.get("/health", tags=["health"])
+    def health_check_root():
+        return {
+            "status": "healthy",
+            "service": "ai-task-assistant-backend",
+            "environment": os.environ.get("RAILWAY_ENVIRONMENT", "local"),
+            "port": os.environ.get("PORT", "8080")
+        }
+
+    # HEALTH CHECK: API prefixed version
     @app.get("/api/health", tags=["health"])
-    def health_check():
-        return {"status": "healthy", "service": "todo-backend", "environment": os.environ.get("RAILWAY_ENVIRONMENT", "local")}
+    def health_check_api():
+        return {
+            "status": "healthy",
+            "service": "ai-task-assistant-backend",
+            "environment": os.environ.get("RAILWAY_ENVIRONMENT", "local"),
+            "port": os.environ.get("PORT", "8080")
+        }
 
     # Include API router
     app.include_router(api_router, prefix=settings.api_prefix)
@@ -161,6 +176,6 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    # Railway defaults to port 8080 or dynamic PORT
-    port = int(os.environ.get("PORT", 8000))
+    # Railway uses PORT env var, default to 8080
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
