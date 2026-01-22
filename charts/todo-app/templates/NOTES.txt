@@ -1,0 +1,7 @@
+Thank you for installing todo-app.
+
+To access the frontend (if NodePort):
+  kubectl get svc {{ include "todo-app.fullname" . }}-frontend
+
+Backend service:
+  kubectl get svc {{ include "todo-app.fullname" . }}-backend

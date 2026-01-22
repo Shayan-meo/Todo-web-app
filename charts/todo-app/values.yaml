@@ -1,0 +1,51 @@
+replicaCount: 1
+
+backend:
+  replicaCount: 2
+  image:
+    repository: backend
+    tag: latest2
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 3000
+    type: NodePort
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  host: todo.local
+
+secrets:
+  OPENAI_API_KEY: ""
+  GROQ_API_KEY: ""
+  DATABASE_URL: "sqlite:///./todo.db"
+
+config:
+  backendURL: http://todo-backend:8000
+
+resources: {}
