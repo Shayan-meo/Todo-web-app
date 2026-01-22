@@ -26,6 +26,11 @@ def get_allowed_origins() -> List[str]:
     Build the list of allowed CORS origins from environment and defaults.
     Supports Docker/Kubernetes environments via BACKEND_CORS_ORIGINS env var.
     """
+    # Check if wildcard mode is enabled (for development/testing)
+    if os.getenv("CORS_ALLOW_ALL", "").lower() == "true":
+        logger.warning("CORS_ALLOW_ALL enabled - allowing all origins (not recommended for production)")
+        return ["*"]
+
     # Default origins that are always allowed
     default_origins = [
         "https://todo-web-app-red-mu.vercel.app",  # Production Vercel frontend
@@ -119,25 +124,18 @@ def create_app() -> FastAPI:
     # Explicitly define all allowed origins for production security
     allowed_origins = get_allowed_origins()
 
+    # When using wildcard "*", credentials must be False per CORS spec
+    # When using specific origins, credentials can be True
+    use_credentials = "*" not in allowed_origins
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=[
-            "Authorization",
-            "Content-Type",
-            "Accept",
-            "Origin",
-            "X-Requested-With",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-        ],
-        expose_headers=[
-            "Content-Length",
-            "X-Request-ID",
-        ],
-        max_age=600,  # Cache preflight requests for 10 minutes
+        allow_credentials=use_credentials,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+        allow_headers=["*"],  # Allow all headers for flexibility
+        expose_headers=["*"],  # Expose all headers to frontend
+        max_age=86400,  # Cache preflight requests for 24 hours
     )
 
     # Root endpoint

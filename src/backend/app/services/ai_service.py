@@ -81,6 +81,27 @@ class AIService:
         """
         return bool(self._api_key and self.client)
 
+    def _get_default_action_message(self, action_name: str) -> str:
+        """
+        Generate a default confirmation message when AI doesn't provide text content.
+
+        This is used when the AI performs a tool action but doesn't stream
+        any text content back (common with function-calling models).
+
+        Args:
+            action_name: The name of the tool action that was executed
+
+        Returns:
+            A user-friendly confirmation message
+        """
+        default_messages = {
+            "add_task": "Task has been added successfully! ✅",
+            "list_tasks": "Here are your current tasks.",
+            "update_task": "Task has been updated successfully! ✅",
+            "delete_task": "Task has been deleted successfully! 🗑️",
+        }
+        return default_messages.get(action_name, "Action completed successfully.")
+
     def _detect_language(self, message: str) -> str:
         """
         Neural Language Detection based on first 3 words.
