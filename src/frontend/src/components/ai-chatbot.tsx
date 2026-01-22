@@ -200,7 +200,7 @@ export function AIChatbot() {
                     <Bot className="h-6 w-6 text-indigo-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold tracking-tight text-white">Lyvexa AI</h2>
+                    <h2 className="text-xl font-bold tracking-tight text-white">AI Task Assistant</h2>
                     <div className="flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">Neural Engine Active</p>
@@ -277,7 +277,7 @@ export function AIChatbot() {
                   <Input 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask Lyvexa anything..."
+                    placeholder="Ask me anything..."
                     className="bg-white/5 border-white/10 h-14 rounded-2xl pr-14 focus:border-indigo-500/50 transition-all text-white placeholder:text-zinc-600"
                     disabled={isLoading}
                   />

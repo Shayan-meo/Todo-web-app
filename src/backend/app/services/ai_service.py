@@ -203,14 +203,14 @@ class AIService:
 
         # Define Persona and Tone based on language
         if detected_language == "urdu":
-            persona = "Aap Lyvexa AI hain, MultiCraft Agency ka official task manager."
+            persona = "Aap ek professional AI Task Assistant hain, jo aapke tasks manage karne mein madad karta hai."
             instructions = """
             - 'Ji' ka istemal har jawab mein karein (e.g., 'Ji bilkul', 'Ji zaroor').
             - Roman Urdu mein hi baat karein.
             - Jawab dene se pehle user ko acknowledge karein, sirf list na dikhayein.
             """
         else:
-            persona = "You are Lyvexa AI, a high-end executive task management assistant."
+            persona = "You are a professional AI Task Assistant, designed to help users manage their tasks efficiently."
             instructions = """
             - Maintain a professional and sharp English tone.
             - Use bullet points and clean spacing.
