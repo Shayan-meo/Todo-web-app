@@ -1,8 +1,13 @@
 """AI Chatbot endpoints for Todo app."""
 
 import json
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import StreamingResponse
+import logging
+import os
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app import deps
@@ -11,84 +16,203 @@ from app.crud import task as task_crud
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.chat import ChatMessageCreate, ChatMessageRead
-from app.services.ai_service import AIService, get_ai_service
+from app.services.ai_service import AIService, get_ai_service, AIServiceError
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["ai"])
 
 
-@router.post("/chat")
+# =============================================================================
+# Pydantic Request/Response Models for API Clarity
+# =============================================================================
+
+class ChatRequest(BaseModel):
+    """Request schema for chat endpoint."""
+    message: str = Field(..., min_length=1, max_length=2000, description="User message to send to AI")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Add a task to buy groceries"
+            }
+        }
+
+
+class ChatResponse(BaseModel):
+    """Response schema for successful chat completion."""
+    role: str = Field(default="assistant", description="Message role (always 'assistant')")
+    content: str = Field(..., description="AI response content")
+    action_taken: Optional[str] = Field(None, description="Tool action executed (add_task, list_tasks, etc.)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "role": "assistant",
+                "content": "Task 'Buy groceries' has been added successfully!",
+                "action_taken": "add_task"
+            }
+        }
+
+
+class ErrorResponse(BaseModel):
+    """Response schema for error cases."""
+    success: bool = Field(default=False)
+    error: str = Field(..., description="Error type or code")
+    detail: str = Field(..., description="Human-readable error message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": False,
+                "error": "ai_service_unavailable",
+                "detail": "The AI service is temporarily unavailable. Please try again later."
+            }
+        }
+
+
+# =============================================================================
+# Chat Endpoint with Robust Error Handling
+# =============================================================================
+
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    responses={
+        200: {"model": ChatResponse, "description": "Successful AI response"},
+        400: {"model": ErrorResponse, "description": "Invalid request"},
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        503: {"model": ErrorResponse, "description": "AI service unavailable"},
+    }
+)
 async def chat(
-    message_in: ChatMessageCreate,
+    message_in: ChatRequest,
     current_user: User = Depends(deps.get_current_user),
     db: Session = Depends(get_db),
     ai_service: AIService = Depends(get_ai_service),
 ):
-    """Send a message to the AI chatbot (Standard JSON Response)."""
-    # Get user's current tasks for context
-    user_tasks = task_crud.get_tasks_for_user(db, current_user.id)
+    """
+    Send a message to the AI chatbot.
 
-    # Get chat history for context
-    chat_history = chat_crud.get_chat_history(db, current_user.id, limit=10)
+    The AI can perform task management actions based on natural language:
+    - Add new tasks
+    - List existing tasks
+    - Update task status/priority
+    - Delete tasks
 
-    # Save user message
-    chat_crud.save_chat_message(db, current_user.id, "user", message_in.message)
+    Returns a JSON response with the AI's reply and any action taken.
+    """
+    try:
+        # Validate AI service is available
+        if not ai_service.is_available():
+            logger.error("AI service unavailable - API key not configured")
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={
+                    "success": False,
+                    "error": "ai_service_unavailable",
+                    "detail": "AI service is not configured. Please contact support."
+                }
+            )
 
-    # Variables to collect stream data internally
-    full_content = ""
-    action_name = None
-    action_data = None
+        # Get user's current tasks for context
+        user_tasks = task_crud.get_tasks_for_user(db, current_user.id)
 
-    # Prepare history format
-    history_dicts = [{"role": msg.role, "content": msg.content} for msg in chat_history]
+        # Get chat history for context
+        chat_history = chat_crud.get_chat_history(db, current_user.id, limit=10)
 
-    # Process AI stream internally to avoid blank bubbles on frontend
-    async for event_str in ai_service.stream_chat(
-        user_message=message_in.message,
-        user_tasks=user_tasks,
-        chat_history=history_dicts,
-    ):
+        # Save user message
+        chat_crud.save_chat_message(db, current_user.id, "user", message_in.message)
+
+        # Variables to collect stream data internally
+        full_content = ""
+        action_name = None
+        action_data = None
+
+        # Prepare history format
+        history_dicts = [{"role": msg.role, "content": msg.content} for msg in chat_history]
+
+        # Process AI stream internally to avoid blank bubbles on frontend
         try:
-            event = json.loads(event_str)
+            async for event_str in ai_service.stream_chat(
+                user_message=message_in.message,
+                user_tasks=user_tasks,
+                chat_history=history_dicts,
+            ):
+                try:
+                    event = json.loads(event_str)
 
-            if event["type"] == "token":
-                full_content += event["content"]
+                    if event["type"] == "token":
+                        full_content += event["content"]
 
-            elif event["type"] == "tool_call":
-                action_name = event["name"]
-                
-                # Debug log for priority extraction
-                if action_name == "add_task":
-                    print(f"[DEBUG] add_task arguments: {event['arguments']}")
-                    print(f"[DEBUG] Priority in args: {event['arguments'].get('priority', 'NOT FOUND')}")
+                    elif event["type"] == "tool_call":
+                        action_name = event["name"]
 
-                action_result = await _execute_tool_action(
-                    event["name"],
-                    event["arguments"],
-                    current_user.id,
-                    db,
-                )
-                action_data = action_result
+                        # Debug log for priority extraction
+                        if action_name == "add_task":
+                            logger.debug(f"add_task arguments: {event['arguments']}")
+                            logger.debug(f"Priority in args: {event['arguments'].get('priority', 'NOT FOUND')}")
 
-                # For list_tasks, send the formatted tasks as content
-                if event["name"] == "list_tasks" and action_result.get("formatted_tasks"):
-                    full_content += "\n" + action_result["formatted_tasks"]
+                        action_result = await _execute_tool_action(
+                            event["name"],
+                            event["arguments"],
+                            current_user.id,
+                            db,
+                        )
+                        action_data = action_result
 
-            elif event["type"] == "error":
-                print(f"[AI ERROR] {event.get('content')}")
+                        # For list_tasks, send the formatted tasks as content
+                        if event["name"] == "list_tasks" and action_result.get("formatted_tasks"):
+                            full_content += "\n" + action_result["formatted_tasks"]
 
-        except Exception as e:
-            print(f"[STREAM ERROR] {str(e)}")
+                    elif event["type"] == "error":
+                        logger.warning(f"AI stream error: {event.get('content')}")
 
-    # Save assistant message to DB after processing finishes
-    final_msg = full_content.strip()
-    if not final_msg and action_name:
-        final_msg = ai_service._get_default_action_message(action_name)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse AI event: {e}")
+                    continue
 
-    if final_msg:
-        chat_crud.save_chat_message(db, current_user.id, "assistant", final_msg)
+        except AIServiceError as e:
+            logger.error(f"AI service error during stream: {e}")
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={
+                    "success": False,
+                    "error": "ai_processing_error",
+                    "detail": str(e)
+                }
+            )
 
-    # Return standard JSON instead of StreamingResponse
-    return {"role": "assistant", "content": final_msg, "action_taken": action_name}
+        # Save assistant message to DB after processing finishes
+        final_msg = full_content.strip()
+        if not final_msg and action_name:
+            final_msg = ai_service._get_default_action_message(action_name)
+
+        if final_msg:
+            chat_crud.save_chat_message(db, current_user.id, "assistant", final_msg)
+
+        # Return standard JSON response
+        return ChatResponse(
+            role="assistant",
+            content=final_msg,
+            action_taken=action_name
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401 from auth)
+        raise
+    except Exception as e:
+        # Catch-all for unexpected errors
+        logger.error(f"Unexpected error in chat endpoint: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "success": False,
+                "error": "internal_error",
+                "detail": "An unexpected error occurred. Please try again."
+            }
+        )
 
 
 async def _execute_tool_action(

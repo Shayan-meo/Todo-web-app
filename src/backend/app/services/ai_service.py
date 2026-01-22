@@ -1,15 +1,21 @@
 """
 AI Service for Todo Chatbot using Groq API.
-This service handles natural language processing, tool calling, 
+This service handles natural language processing, tool calling,
 and context-aware task management for MultiCraft Agency projects.
+
+Production-ready with:
+- API key validation
+- Custom error handling
+- Docker/Kubernetes environment support
 """
 
 import json
 import logging
+import os
 from datetime import datetime
 from typing import Any, AsyncGenerator, List, Dict, Optional
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APIError, APIConnectionError, RateLimitError, AuthenticationError
 
 from app.core.config import settings
 from app.models.task import Task
@@ -18,21 +24,62 @@ from app.schemas.chat import ChatResponse
 # Setup logging for debugging tool calls
 logger = logging.getLogger(__name__)
 
+
+class AIServiceError(Exception):
+    """Custom exception for AI service errors with user-friendly messages."""
+
+    def __init__(self, message: str, original_error: Optional[Exception] = None):
+        self.message = message
+        self.original_error = original_error
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
 class AIService:
     """
     Service for processing chat messages with Groq API.
     Handles tool calling, language mirroring, and premium task formatting.
+
+    Production features:
+    - API key validation before initialization
+    - Graceful degradation when AI is unavailable
+    - Comprehensive error handling for network/API issues
     """
 
     def __init__(self, api_key: str, model: str, base_url: str):
         """
         Initialize the OpenAI client with Groq configuration.
+
+        Args:
+            api_key: Groq API key (required for AI functionality)
+            model: Model identifier (e.g., llama-3.3-70b-versatile)
+            base_url: Groq API base URL
         """
-        self.client = AsyncOpenAI(
-            api_key=api_key,
-            base_url=base_url,
-        )
+        self._api_key = api_key
         self.model = model
+        self._base_url = base_url
+
+        # Only initialize client if API key is provided
+        if self._api_key:
+            self.client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+            )
+            logger.info(f"AI Service initialized with model: {model}")
+        else:
+            self.client = None
+            logger.warning("AI Service initialized WITHOUT API key - AI features disabled")
+
+    def is_available(self) -> bool:
+        """
+        Check if the AI service is properly configured and available.
+
+        Returns:
+            True if API key is set and client is initialized, False otherwise.
+        """
+        return bool(self._api_key and self.client)
 
     def _detect_language(self, message: str) -> str:
         """
@@ -256,20 +303,37 @@ TOOL USAGE:
     ) -> AsyncGenerator[str, None]:
         """
         Main interface for streaming chat completions with Groq.
+
+        Args:
+            user_message: The user's input message
+            user_tasks: List of user's current tasks for context
+            chat_history: Optional previous conversation history
+
+        Yields:
+            JSON strings containing tokens, tool calls, or errors
+
+        Raises:
+            AIServiceError: When AI service is unavailable or API call fails
         """
+        # Validate service availability
+        if not self.is_available():
+            raise AIServiceError(
+                "AI service is not configured. Please set GROQ_API_KEY environment variable."
+            )
+
         # 1. Detection Phase
         detected_language = self._detect_language(user_message)
-        
+
         # 2. Message Assembly
         messages = [
             {"role": "system", "content": self._get_system_prompt(user_tasks, detected_language)}
         ]
-        
+
         # Add historical context (Last 8 turns for balance)
         if chat_history:
             for msg in chat_history[-8:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
-        
+
         # Final user input
         messages.append({"role": "user", "content": user_message})
 
@@ -288,9 +352,9 @@ TOOL USAGE:
             async for chunk in stream:
                 if not chunk.choices:
                     continue
-                    
+
                 delta = chunk.choices[0].delta
-                
+
                 # Stream content tokens
                 if delta.content:
                     yield json.dumps({"type": "token", "content": delta.content}) + "\n"
@@ -301,7 +365,7 @@ TOOL USAGE:
                         idx = tc.index
                         if idx not in tool_calls_buffer:
                             tool_calls_buffer[idx] = {"id": "", "name": "", "arguments": ""}
-                        
+
                         if tc.id:
                             tool_calls_buffer[idx]["id"] = tc.id
                         if tc.function:
@@ -324,16 +388,66 @@ TOOL USAGE:
                     except json.JSONDecodeError:
                         logger.error(f"Failed to decode tool arguments: {tool_data['arguments']}")
 
+        except AuthenticationError as e:
+            logger.error(f"Groq API authentication failed: {e}")
+            raise AIServiceError(
+                "AI service authentication failed. Please check GROQ_API_KEY.",
+                original_error=e
+            )
+        except RateLimitError as e:
+            logger.warning(f"Groq API rate limit hit: {e}")
+            yield json.dumps({
+                "type": "error",
+                "content": "AI service is busy. Please wait a moment and try again."
+            }) + "\n"
+        except APIConnectionError as e:
+            logger.error(f"Cannot connect to Groq API: {e}")
+            raise AIServiceError(
+                "Cannot connect to AI service. Please check your network connection.",
+                original_error=e
+            )
+        except APIError as e:
+            logger.error(f"Groq API error: {e}")
+            raise AIServiceError(
+                f"AI service error: {e.message if hasattr(e, 'message') else str(e)}",
+                original_error=e
+            )
         except Exception as e:
-            logger.error(f"Streaming Error: {str(e)}")
-            yield json.dumps({"type": "error", "content": "Neural Link reset. Attempting reconnection..."}) + "\n"
+            logger.error(f"Unexpected streaming error: {str(e)}", exc_info=True)
+            yield json.dumps({
+                "type": "error",
+                "content": "An unexpected error occurred. Please try again."
+            }) + "\n"
 
 def get_ai_service() -> AIService:
     """
     Dependency provider for AI Service.
+
+    Reads configuration from environment variables with fallback to settings.
+    This supports Docker/Kubernetes deployments where env vars are injected at runtime.
+
+    Environment Variables:
+        GROQ_API_KEY: Required for AI functionality
+        GROQ_MODEL: Optional, defaults to llama-3.3-70b-versatile
+        GROQ_BASE_URL: Optional, defaults to https://api.groq.com/openai/v1
+
+    Returns:
+        AIService instance (may be non-functional if API key is missing)
     """
+    # Priority: Environment variable > Settings file
+    api_key = os.getenv("GROQ_API_KEY") or settings.groq_api_key
+    model = os.getenv("GROQ_MODEL") or settings.groq_model
+    base_url = os.getenv("GROQ_BASE_URL") or settings.groq_base_url
+
+    if not api_key:
+        logger.warning(
+            "GROQ_API_KEY not found in environment or settings. "
+            "AI features will be unavailable. "
+            "Set GROQ_API_KEY in your environment or .env file."
+        )
+
     return AIService(
-        api_key=settings.groq_api_key,
-        model=settings.groq_model,
-        base_url=settings.groq_base_url,
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
     )
