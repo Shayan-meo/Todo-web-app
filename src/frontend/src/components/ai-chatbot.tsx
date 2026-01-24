@@ -118,7 +118,7 @@ export function AIChatbot() {
           const actionText = data.action_taken.replace('_', ' ').toUpperCase();
           
           toast.success(actionText, {
-            description: data.priority_detected ? `Priority: ${data.priority_detected}` : "Database sync successful",
+            description: data.priority_detected ? `Priority: ${data.priority_detected}` : "Task State Synchronized",
             icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
             className: "glass-strong border-emerald-500/30"
           });
