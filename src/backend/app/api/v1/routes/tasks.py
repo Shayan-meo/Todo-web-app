@@ -6,6 +6,7 @@ from app.crud import task as task_crud
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskRead, TaskUpdate
+from app.services.kafka_producer import publish_task_event
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -24,7 +25,10 @@ def create_task(
     current_user: User = Depends(deps.get_current_user),
     db: Session = Depends(get_db),
 ) -> TaskRead:
-    return task_crud.create_task(db, current_user.id, task_in)
+    task = task_crud.create_task(db, current_user.id, task_in)
+    # Publish task creation event to Kafka
+    publish_task_event(task_id=task.id, action="create", user_id=current_user.id)
+    return task
 
 
 @router.put("/{task_id}", response_model=TaskRead)
@@ -37,7 +41,10 @@ def update_task(
     task = task_crud.get_task(db, task_id, current_user.id)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    return task_crud.update_task(db, task, task_in)
+    updated_task = task_crud.update_task(db, task, task_in)
+    # Publish task update event to Kafka
+    publish_task_event(task_id=task_id, action="update", user_id=current_user.id)
+    return updated_task
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -49,6 +56,8 @@ def delete_task(
     task = task_crud.get_task(db, task_id, current_user.id)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    # Publish task deletion event to Kafka before deleting
+    publish_task_event(task_id=task_id, action="delete", user_id=current_user.id)
     task_crud.delete_task(db, task)
 
 
@@ -64,4 +73,6 @@ def mark_complete(
     task.is_completed = True
     db.commit()
     db.refresh(task)
+    # Publish task completion (update) event to Kafka
+    publish_task_event(task_id=task_id, action="update", user_id=current_user.id)
     return task

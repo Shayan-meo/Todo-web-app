@@ -1,0 +1,53 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub-kafka
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    # Confluent Cloud Kafka Bootstrap Server
+    - name: brokers
+      secretKeyRef:
+        name: kafka-secrets
+        key: KAFKA_BOOTSTRAP_SERVER
+    # SASL Authentication
+    - name: authType
+      value: "password"
+    - name: saslUsername
+      secretKeyRef:
+        name: kafka-secrets
+        key: KAFKA_SASL_USERNAME
+    - name: saslPassword
+      secretKeyRef:
+        name: kafka-secrets
+        key: KAFKA_SASL_PASSWORD
+    - name: saslMechanism
+      value: "PLAIN"
+    # TLS/SSL Configuration for Confluent Cloud
+    - name: tls
+      value: "true"
+    - name: tlsSkipVerify
+      value: "false"
+    # Consumer Configuration
+    - name: consumerGroup
+      value: "todo-app-consumer-group"
+    - name: initialOffset
+      value: "newest"
+    # Producer Configuration
+    - name: maxMessageBytes
+      value: "1048576"
+    - name: clientID
+      value: "todo-app-dapr"
+---
+# Secret store configuration for Kafka credentials
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-secrets
+  namespace: default
+spec:
+  type: secretstores.local.env
+  version: v1
+  metadata: []

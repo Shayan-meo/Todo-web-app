@@ -97,7 +97,7 @@ export function AIChatbot() {
         if (response.status === 400) {
           throw new Error("Daily AI Limit Reached (Reset at 5 AM PKT)");
         }
-        throw new Error("Neural link unstable. Please check connection.");
+        throw new Error("Connection error. Please try again.");
       }
 
       const data: ChatResponse = await response.json();
@@ -140,7 +140,7 @@ export function AIChatbot() {
     try {
       await chatApi.clearHistory();
       setMessages([]);
-      toast.info("Neural memory cleared");
+      toast.info("Conversation history cleared");
     } catch (error) {
       toast.error("Failed to clear history");
     }
@@ -200,10 +200,10 @@ export function AIChatbot() {
                     <Bot className="h-6 w-6 text-indigo-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold tracking-tight text-white">AI Task Assistant</h2>
+                    <h2 className="text-xl font-bold tracking-tight text-white">Advanced AI Task Assistant</h2>
                     <div className="flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">Neural Engine Active</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">Intelligent Assistant Ready</p>
                     </div>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export function AIChatbot() {
                 {isLoading && (
                   <div className="flex gap-3 items-center px-2">
                     <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                    <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Processing Neural Matrix...</span>
+                    <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Processing Request...</span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
