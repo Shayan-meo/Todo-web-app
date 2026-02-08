@@ -54,7 +54,7 @@ export default function RootLayout({
                       Dashboard
                     </Link>
                     <a
-                      href="https://www.linkedin.com/in/tabraiz-haider-a2a4942a9?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+                      href="https://www.linkedin.com/in/muhammad-shayan-99a39b2b0/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-muted-foreground transition-colors hover:text-indigo-400 hover:scale-110"
