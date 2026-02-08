@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import { ClipboardList } from "lucide-react";
 
 interface TaskListProps {
   tasks: Task[];
@@ -23,10 +24,6 @@ const taskVariants = {
   visible: { opacity: 1, y: 0 },
   exit: { opacity: 0, x: -20 },
 };
-
-import { ClipboardList } from "lucide-react";
-
-// ... existing imports
 
 export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskListProps) {
   const sortedTasks = useMemo(() => {
@@ -47,6 +44,21 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
       // 1. Completion status
       if (a.is_completed !== b.is_completed) {
         return Number(a.is_completed) - Number(b.is_completed); // 0 (incomplete) before 1 (complete)
+      }
+
+      // 2. Priority (only for incomplete tasks usually, but useful for history too)
+      const weightA = priorityWeight[a.priority || "Normal"] || 2;
+      const weightB = priorityWeight[b.priority || "Normal"] || 2;
+
+      if (weightA !== weightB) {
+        return weightB - weightA; // Higher weight first
+      }
+
+      // 3. Date (Newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [tasks]);
+
   const getPriorityBadge = (priority?: string) => {
     switch(priority) {
       case "High":
