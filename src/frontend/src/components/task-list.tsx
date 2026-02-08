@@ -127,7 +127,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
           No tasks yet
         </h3>
         <p className="text-slate-300 max-w-[300px] mx-auto mb-6">
-          Create your first task and start organizing your workflow. You'll see everything here.
+          Create your first task and start organizing your workflow. You&apos;ll see everything here.
         </p>
       </motion.div>
     );
@@ -243,3 +243,5 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
     </AnimatePresence>
   );
 }
+
+export default TaskList;
