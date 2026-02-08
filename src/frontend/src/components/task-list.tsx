@@ -47,21 +47,6 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
       // 1. Completion status
       if (a.is_completed !== b.is_completed) {
         return Number(a.is_completed) - Number(b.is_completed); // 0 (incomplete) before 1 (complete)
-      }
-
-      // 2. Priority (only for incomplete tasks usually, but useful for history too)
-      const weightA = priorityWeight[a.priority || "Normal"] || 2;
-      const weightB = priorityWeight[b.priority || "Normal"] || 2;
-
-      if (weightA !== weightB) {
-        return weightB - weightA; // Higher weight first
-      }
-
-      // 3. Date (Newest first)
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-  }, [tasks]);
-
   const getPriorityBadge = (priority?: string) => {
     switch(priority) {
       case "High":
@@ -70,7 +55,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
             animate={{
               boxShadow: [
                 "0 0 0px rgba(239, 68, 68, 0)",
-                "0 0 20px rgba(239, 68, 68, 0.7)",
+                "0 0 20px rgba(239, 68, 68, 0.5)",
                 "0 0 0px rgba(239, 68, 68, 0)"
               ]
             }}
@@ -81,31 +66,31 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
             }}
             className="relative"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-rose-500/30 to-pink-500/30 rounded-full blur-lg animate-pulse" />
-            <div className="relative inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-rose-300/90 border border-white/10">
-              <div className="h-1.5 w-1.5 rounded-full bg-rose-400/90 mr-1.5" />
+            <div className="absolute -inset-1 bg-red-500/20 rounded-full blur-lg animate-pulse" />
+            <div className="relative inline-flex items-center gap-1 rounded-full bg-red-500/20 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-red-300 border border-red-500/40">
+              <div className="h-1.5 w-1.5 rounded-full bg-red-400 mr-1.5" />
               High Priority
             </div>
           </motion.div>
         );
       case "Medium":
         return (
-          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300/90 border border-amber-500/30">
-            <div className="h-1.5 w-1.5 rounded-full bg-amber-400/90 mr-1.5" />
+          <div className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-300 border border-orange-500/40">
+            <div className="h-1.5 w-1.5 rounded-full bg-orange-400 mr-1.5" />
             Medium Priority
           </div>
         );
       case "Normal":
         return (
-          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 border border-slate-600/30">
-            <div className="h-1.5 w-1.5 rounded-full bg-slate-500 mr-1.5" />
+          <div className="inline-flex items-center gap-1 rounded-full bg-slate-700/50 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-300 border border-slate-600/50">
+            <div className="h-1.5 w-1.5 rounded-full bg-slate-400 mr-1.5" />
             Normal Priority
           </div>
         );
       case "Low":
         return (
-          <div className="inline-flex items-center gap-1 rounded-full backdrop-blur-md bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400/90 border border-blue-500/30">
-            <div className="h-1.5 w-1.5 rounded-full bg-blue-400/90 mr-1.5" />
+          <div className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-cyan-300 border border-cyan-500/40">
+            <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 mr-1.5" />
             Low Priority
           </div>
         );
@@ -119,19 +104,19 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-12 text-center"
+        className="rounded-xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center"
       >
         <div className="flex justify-center mb-6">
           <div className="relative">
-            <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
-            <ClipboardList className="relative h-16 w-16 text-indigo-400" />
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
+            <ClipboardList className="relative h-16 w-16 text-emerald-500" />
           </div>
         </div>
-        <h3 className="text-2xl font-bold tracking-tight text-slate-100 mb-2">
-          No tasks found
+        <h3 className="text-2xl font-bold tracking-tight text-white mb-2">
+          No tasks yet
         </h3>
-        <p className="text-slate-400 max-w-[300px] mx-auto mb-6">
-          Your productivity journey starts here. Add your first task to stay organized.
+        <p className="text-slate-300 max-w-[300px] mx-auto mb-6">
+          Create your first task and start organizing your workflow. You'll see everything here.
         </p>
       </motion.div>
     );
@@ -150,23 +135,23 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
             transition={{ delay: index * 0.05 }}
             layout
           >
-            <Card className={`relative overflow-hidden border-slate-800 bg-slate-900/40 transition-all hover:-translate-y-[2px] hover:shadow-lg hover:shadow-indigo-500/10 ${
+            <Card className={`relative overflow-hidden bg-slate-800/40 border-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/10 ${
               task.is_completed ? "opacity-60" : ""
             } ${
               task.priority === "High"
-                ? "border-l-4 border-l-rose-500 shadow-[0_0_25px_rgba(239,68,68,0.15)]"
+                ? "border-l-4 border-l-red-500"
                 : task.priority === "Medium"
-                ? "border-l-4 border-l-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                ? "border-l-4 border-l-orange-500"
                 : task.priority === "Low"
-                ? "border-l-4 border-l-blue-500/70"
-                : "border-l-4 border-l-slate-700"
+                ? "border-l-4 border-l-cyan-500"
+                : "border-l-4 border-l-slate-600"
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="mt-1 flex-shrink-0 text-slate-500 hover:text-indigo-400 transition-colors"
+                    className="mt-1 flex-shrink-0 text-slate-500 hover:text-emerald-400 transition-colors"
                     onClick={() => onToggleComplete(task.id, !task.is_completed)}
                     aria-label={task.is_completed ? "Mark incomplete" : "Mark complete"}
                   >
@@ -181,20 +166,20 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                          <span className="text-xs font-mono text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded">
                             #{task.id}
                           </span>
                           <h3 className={`font-semibold transition-all ${
                             task.is_completed
                               ? "line-through text-slate-500"
-                              : "text-slate-100"
+                              : "text-white"
                           }`}>
                             {task.title}
                           </h3>
                           {getPriorityBadge(task.priority)}
                         </div>
                       </div>
-                      <span className="flex-shrink-0 text-xs text-slate-500 flex items-center gap-1 whitespace-nowrap ml-2">
+                      <span className="flex-shrink-0 text-xs text-slate-400 flex items-center gap-1 whitespace-nowrap ml-2">
                         <Clock className="h-3 w-3" />
                         {dayjs(task.updated_at).format("MMM D, HH:mm")}
                       </span>
@@ -204,14 +189,14 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                       <p className={`mt-2 text-sm transition-all ${
                         task.is_completed
                           ? "text-slate-600"
-                          : "text-slate-400"
+                          : "text-slate-300"
                       }`}>
                         {task.description}
                       </p>
                     )}
 
                     {task.reminder_time && !task.is_completed && (
-                      <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-500/90">
+                      <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-orange-400">
                         <Bell className="h-3.5 w-3.5" />
                         <span>Remind: {dayjs(task.reminder_time).format("MMM D, h:mm A")}</span>
                       </div>
@@ -221,7 +206,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 gap-1 text-slate-500 hover:text-slate-100 hover:bg-slate-800"
+                        className="h-8 gap-1 text-slate-400 hover:text-white hover:bg-slate-700/50"
                         onClick={() => onEdit(task)}
                       >
                         <Edit className="h-4 w-4" />
@@ -230,7 +215,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 gap-1 text-slate-500 hover:text-red-400 hover:bg-red-900/20"
+                        className="h-8 gap-1 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
                         onClick={() => onDelete(task.id)}
                       >
                         <Trash2 className="h-4 w-4" />

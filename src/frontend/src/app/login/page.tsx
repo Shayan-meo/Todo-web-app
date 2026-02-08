@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AuthForm } from "@/components/auth-form";
-import { Sparkles, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -20,20 +20,20 @@ export default function LoginPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30 mb-4"
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 mb-4"
           >
             <Lock className="h-8 w-8" />
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
             Welcome Back
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-slate-300">
             Sign in to continue managing your tasks
           </p>
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-xl p-8">
+        <div className="glass-card rounded-xl p-8 border-slate-700">
           <AuthForm mode="login" />
         </div>
 
@@ -44,11 +44,11 @@ export default function LoginPage() {
           transition={{ delay: 0.3 }}
           className="mt-6 text-center"
         >
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-400">
             New to Todo-App?{" "}
             <Link
               href="/register"
-              className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors"
+              className="font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
             >
               Create an account
             </Link>

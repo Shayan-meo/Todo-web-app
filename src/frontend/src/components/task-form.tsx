@@ -70,28 +70,28 @@ export function TaskForm({ initialValues, onSubmit, submitLabel = "Save task" }:
   const getPriorityColor = (p: string) => {
     switch (p) {
       case "High": return "text-red-500";
-      case "Medium": return "text-orange-500";
-      case "Low": return "text-blue-500";
-      default: return "text-foreground";
+      case "Medium": return "text-orange-400";
+      case "Low": return "text-cyan-400";
+      default: return "text-slate-300";
     }
   };
 
   return (
     <form onSubmit={handleSubmit(submitHandler)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="task-title">Title</Label>
+        <Label htmlFor="task-title" className="text-white text-sm font-medium">Title</Label>
         <Input
           id="task-title"
           type="text"
-          placeholder="e.g. Finish the detailed report by Friday..."
+          placeholder="Add a new task..."
           {...register("title")}
-          className={`h-11 ${errors.title ? "border-destructive" : ""}`}
+          className={`h-11 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 ${errors.title ? "border-red-500" : ""}`}
         />
         {errors.title && (
           <motion.p
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive flex items-center gap-1"
+            className="text-sm text-red-400 flex items-center gap-1"
           >
             <AlertCircle className="h-4 w-4" />
             {errors.title.message}
@@ -100,40 +100,40 @@ export function TaskForm({ initialValues, onSubmit, submitLabel = "Save task" }:
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="task-priority">Priority</Label>
+        <Label htmlFor="task-priority" className="text-white text-sm font-medium">Priority</Label>
         <Select
           value={priority}
           onValueChange={(value: any) => setValue("priority", value)}
         >
-          <SelectTrigger id="task-priority">
+          <SelectTrigger id="task-priority" className="bg-slate-800 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50">
             <div className="flex items-center gap-2">
               <Flag className={`h-4 w-4 ${getPriorityColor(priority)}`} />
               <SelectValue placeholder="Select priority" />
             </div>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-slate-900 border-slate-700">
             <SelectItem value="High" className="font-medium">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-red-500" />
-                <span className="text-red-500">High Priority</span>
+                <span className="text-red-400">High Priority</span>
               </div>
             </SelectItem>
             <SelectItem value="Medium" className="font-medium">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-orange-500" />
-                <span className="text-orange-500">Medium Priority</span>
+                <div className="h-2 w-2 rounded-full bg-orange-400" />
+                <span className="text-orange-400">Medium Priority</span>
               </div>
             </SelectItem>
             <SelectItem value="Normal">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-slate-500" />
-                <span>Normal Priority</span>
+                <div className="h-2 w-2 rounded-full bg-slate-400" />
+                <span className="text-slate-300">Normal Priority</span>
               </div>
             </SelectItem>
             <SelectItem value="Low">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                <span className="text-blue-500">Low Priority</span>
+                <div className="h-2 w-2 rounded-full bg-cyan-400" />
+                <span className="text-cyan-400">Low Priority</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -141,18 +141,21 @@ export function TaskForm({ initialValues, onSubmit, submitLabel = "Save task" }:
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="task-description">Description <span className="text-muted-foreground">(optional)</span></Label>
+        <Label htmlFor="task-description" className="text-white text-sm font-medium">
+          Description <span className="text-slate-400">(optional)</span>
+        </Label>
         <Textarea
           id="task-description"
-          placeholder="Optional details..."
+          placeholder="Add task details..."
           rows={3}
           {...register("description")}
+          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50"
         />
         {errors.description && (
           <motion.p
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive flex items-center gap-1"
+            className="text-sm text-red-400 flex items-center gap-1"
           >
             <AlertCircle className="h-4 w-4" />
             {errors.description.message}
@@ -164,7 +167,7 @@ export function TaskForm({ initialValues, onSubmit, submitLabel = "Save task" }:
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive flex items-start gap-2"
+          className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400 flex items-start gap-2"
         >
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
@@ -174,7 +177,7 @@ export function TaskForm({ initialValues, onSubmit, submitLabel = "Save task" }:
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full"
+        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
       >
         {isSubmitting ? (
           <>

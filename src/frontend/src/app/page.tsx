@@ -23,22 +23,22 @@ export default function Home() {
     {
       icon: <LayoutDashboard className="h-6 w-6" />,
       title: "Intuitive Dashboard",
-      description: "Clean, modern interface designed for productivity",
+      description: "Clean, minimalist interface designed for pure productivity",
     },
     {
       icon: <Zap className="h-6 w-6" />,
       title: "Lightning Fast",
-      description: "Built with performance in mind for instant task management",
+      description: "Built with performance in mind for instant task operations",
     },
     {
       icon: <ShieldCheck className="h-6 w-6" />,
       title: "Secure & Private",
-      description: "Your data is protected with enterprise-grade security",
+      description: "Your data is protected with enterprise-grade encryption",
     },
     {
       icon: <Sparkles className="h-6 w-6" />,
-      title: "Beautiful Design",
-      description: "Premium aesthetic with glassmorphism and smooth animations",
+      title: "Premium Design",
+      description: "Refined aesthetic with elegant dark mode and smooth transitions",
     },
   ];
 
@@ -47,10 +47,10 @@ export default function Home() {
       {/* Animated Background Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"
+          className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.2, 0.4, 0.2],
           }}
           transition={{
             duration: 8,
@@ -59,10 +59,10 @@ export default function Home() {
           }}
         />
         <motion.div
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.2, 0.4, 0.2],
           }}
           transition={{
             duration: 8,
@@ -86,22 +86,22 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 backdrop-blur-sm"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 border border-emerald-500/30 backdrop-blur-sm"
             >
               <Sparkles className="h-4 w-4" />
               <span>Premium Task Management</span>
             </motion.div>
 
-            <h1 className="text-5xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-6xl md:text-7xl">
+            <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl">
               Organize Your Life,{" "}
-              <span className="text-gradient bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              <span className="text-gradient">
                 Effortlessly
               </span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-              Experience the future of task management with a beautifully designed
-              interface, powerful features, and seamless performance.
+            <p className="mx-auto max-w-2xl text-lg text-slate-300">
+              Experience premium task management with an elegant, minimalist interface
+              and powerful productivity features designed for modern teams and individuals.
             </p>
 
             <motion.div
@@ -113,7 +113,7 @@ export default function Home() {
               <Button
                 asChild
                 size="lg"
-                className="h-12 px-8 text-base font-medium shadow-lg shadow-indigo-500/30"
+                className="h-12 px-8 text-base font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
               >
                 <Link href="/register">
                   <CheckCircle2 className="mr-2 h-5 w-5" />
@@ -124,7 +124,7 @@ export default function Home() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-12 px-8 text-base font-medium"
+                className="h-12 px-8 text-base font-medium border-slate-700 text-white hover:bg-slate-800/50"
               >
                 <Link href="/login">Sign in</Link>
               </Button>
@@ -142,11 +142,11 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
               Everything You Need
             </h2>
-            <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-              Powerful features to help you stay organized and productive
+            <p className="mt-4 text-lg text-slate-300">
+              Powerful features to keep you organized and focused on what matters
             </p>
           </motion.div>
 
@@ -158,13 +158,13 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
               >
-                <Card className="glass-card h-full transition-all hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/10">
+                <Card className="glass-card h-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/50">
                   <CardHeader>
-                    <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30">
+                    <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-lg shadow-emerald-500/20">
                       {feature.icon}
                     </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
-                    <CardDescription className="text-base">
+                    <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
+                    <CardDescription className="text-base text-slate-300">
                       {feature.description}
                     </CardDescription>
                   </CardHeader>
@@ -183,20 +183,20 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 1.2 }}
           >
-            <Card className="glass-card border-2 border-indigo-500/20 dark:border-indigo-500/30">
+            <Card className="glass-card border-emerald-500/30">
               <CardHeader className="text-center pb-6">
-                <CardTitle className="text-3xl font-bold">
+                <CardTitle className="text-3xl font-bold text-white">
                   Ready to Get Started?
                 </CardTitle>
-                <CardDescription className="text-lg mt-2">
-                  Join thousands of users who trust Todo-App for their daily productivity
+                <CardDescription className="text-lg mt-2 text-slate-300">
+                  Join thousands of users who trust Todo-App for professional task management
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4 sm:flex-row sm:justify-center pb-6">
                 <Button
                   asChild
                   size="lg"
-                  className="h-12 px-8 text-base font-medium shadow-lg shadow-indigo-500/30"
+                  className="h-12 px-8 text-base font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
                 >
                   <Link href="/register">Create Free Account</Link>
                 </Button>

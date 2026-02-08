@@ -97,7 +97,6 @@ export default function DashboardPage() {
     const response = await apiClient.put<Task>(`/tasks/${taskId}`, { is_completed: isCompleted });
     setTasks((prev) => prev.map((task) => (task.id === taskId ? response.data : task)));
   };
-
   const handleDeleteTask = async (taskId: number) => {
     await apiClient.delete(`/tasks/${taskId}`);
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -108,7 +107,7 @@ export default function DashboardPage() {
   const pendingCount = tasks.length - completedCount;
 
   const SidebarItem = ({ icon: Icon, label }: { icon: any; label: string }) => (
-    <Button variant="ghost" className="w-full justify-start gap-3 h-11">
+    <Button variant="ghost" className="w-full justify-start gap-3 h-11 text-slate-300 hover:text-white hover:bg-slate-800/50">
       <Icon className="h-4 w-4" />
       <span>{label}</span>
     </Button>
@@ -118,7 +117,7 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Loading Sidebar */}
-        <aside className="hidden w-64 border-r bg-white/50 dark:bg-slate-900/50 glass-subtle lg:block">
+        <aside className="hidden w-64 border-r border-slate-700 bg-slate-800/50 lg:block">
           <div className="p-4 space-y-2">
             <Skeleton className="h-11 w-full" />
             <Skeleton className="h-11 w-full" />
@@ -170,15 +169,15 @@ export default function DashboardPage() {
         <Card className="max-w-md w-full glass-card border-red-500/20">
           <CardHeader>
             <CardTitle className="text-red-500">Error Loading Tasks</CardTitle>
-            <CardDescription>{error}</CardDescription>
+            <CardDescription className="text-slate-300">{error}</CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
-            <Button onClick={handleRefresh} disabled={isRefreshing}>
+            <Button onClick={handleRefresh} disabled={isRefreshing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
               Retry
             </Button>
             <Link href="/logout">
-              <Button variant="outline">Logout</Button>
+              <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800/50">Logout</Button>
             </Link>
           </CardContent>
         </Card>
@@ -189,22 +188,22 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
       {/* Sidebar */}
-      <aside className="hidden w-64 border-r bg-white/50 dark:bg-slate-900/50 glass-subtle lg:block">
+      <aside className="hidden w-64 border-r border-slate-700 bg-slate-800/40 lg:block">
         <div className="flex h-full flex-col">
-          <div className="p-6">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Sparkles className="h-4 w-4" />
-              <span>Navigation</span>
+          <div className="p-6 border-b border-slate-700">
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+              <CheckCircle2 className="h-5 w-5" />
+              <span>Tasks</span>
             </div>
           </div>
 
-          <nav className="flex-1 px-4 space-y-1">
+          <nav className="flex-1 px-4 py-6 space-y-1">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" />
           </nav>
 
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-slate-700">
             <Link href="/logout">
-              <Button variant="ghost" className="w-full justify-start gap-3 h-11 text-destructive hover:text-destructive">
+              <Button variant="ghost" className="w-full justify-start gap-3 h-11 text-red-400 hover:text-red-300 hover:bg-red-500/10">
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </Button>
@@ -225,10 +224,10 @@ export default function DashboardPage() {
             className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-3xl font-bold tracking-tight text-white">
                 Dashboard
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-slate-300 mt-1">
                 Manage your tasks and stay organized
               </p>
             </div>
@@ -238,11 +237,12 @@ export default function DashboardPage() {
                 size="icon"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
+                className="border-slate-700 text-slate-300 hover:bg-slate-800/50 hover:text-white"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
               </Button>
               <Link href="/logout" className="hidden sm:block">
-                <Button variant="outline">
+                <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800/50 hover:text-white">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </Button>
@@ -257,40 +257,40 @@ export default function DashboardPage() {
             transition={{ delay: 0.1 }}
             className="grid gap-4 sm:grid-cols-3"
           >
-            <Card className="glass-card">
+            <Card className="glass-card border-slate-700">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-                <Plus className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-slate-300">Total Tasks</CardTitle>
+                <Plus className="h-4 w-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{tasks.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-white">{tasks.length}</div>
+                <p className="text-xs text-slate-400 mt-1">
                   All tasks in your list
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="glass-card">
+            <Card className="glass-card border-slate-700">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-slate-300">Pending</CardTitle>
+                <RefreshCw className="h-4 w-4 text-orange-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-amber-500">{pendingCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-white">{pendingCount}</div>
+                <p className="text-xs text-slate-400 mt-1">
                   Tasks awaiting completion
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="glass-card">
+            <Card className="glass-card border-slate-700">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-slate-300">Completed</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-emerald-500">{completedCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-emerald-500">{completedCount}</div>
+                <p className="text-xs text-slate-400 mt-1">
                   {completionPercentage}% completion rate
                 </p>
               </CardContent>
@@ -307,10 +307,10 @@ export default function DashboardPage() {
             {/* Task List */}
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-white">
                   Your Tasks
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                   {tasks.length === 0 ? "No tasks yet. Create your first task!" : `${completedCount} of ${tasks.length} completed`}
                 </p>
               </div>
@@ -324,13 +324,13 @@ export default function DashboardPage() {
 
             {/* Task Form */}
             <div>
-              <Card className="glass-card sticky top-24">
+              <Card className="glass-card sticky top-24 border-slate-700">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Plus className="h-5 w-5 text-emerald-500" />
                     {editingTask ? "Edit Task" : "Add New Task"}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-slate-400">
                     {editingTask ? "Update your task details below" : "Create a new task to get started"}
                   </CardDescription>
                 </CardHeader>
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                   {editingTask && (
                     <Button
                       variant="ghost"
-                      className="w-full mt-4"
+                      className="w-full mt-4 text-slate-300 hover:bg-slate-800/50 hover:text-white"
                       onClick={() => setEditingTask(null)}
                     >
                       Cancel Editing

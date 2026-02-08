@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    /* Force Dark Mode Colors as Default (Slate/Indigo Theme) */
-    --background: 222 47% 11%;     /* bg-slate-900 */
-    --foreground: 210 40% 98%;     /* text-slate-50 */
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 67%;        /* Indigo-500 */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;      /* Slate-800 */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%; /* Slate-400 */
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    /* Premium Dark Theme - Emerald Accent */
+    --background: 0 0% 4.3%;       /* Deep Soft Black #0B0B0D */
+    --foreground: 0 0% 98%;        /* Off-White / Soft White #F9FAFB */
+    --card: 217 33% 7%;            /* Dark Charcoal #111827 */
+    --card-foreground: 0 0% 98%;
+    --popover: 217 33% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 71% 45%;        /* Emerald Green #22C55E */
+    --primary-foreground: 0 0% 4.3%;
+    --secondary: 217 33% 12%;      /* Dark neutral */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 13% 50%;
+    --accent: 142 71% 45%;         /* Emerald Green */
+    --accent-foreground: 0 0% 4.3%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 239 84% 67%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217 33% 12%;
+    --input: 217 33% 12%;
+    --ring: 142 71% 45%;
     --radius: 0.5rem;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 142 71% 45%;
+    --chart-2: 34 97% 52%;
+    --chart-3: 14 94% 63%;
+    --chart-4: 217 70% 56%;
+    --chart-5: 262 70% 58%;
   }
 
-  /* Kept .dark class same as root for consistency if system preference triggers it */
+  /* Kept .dark class same as root for consistency */
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --background: 0 0% 4.3%;
+    --foreground: 0 0% 98%;
+    --card: 217 33% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 217 33% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 4.3%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 13% 50%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 4.3%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 239 84% 67%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217 33% 12%;
+    --input: 217 33% 12%;
+    --ring: 142 71% 45%;
   }
 }
 
@@ -103,11 +103,11 @@
 /* Glassmorphism Utilities */
 @layer utilities {
   .glass {
-    @apply backdrop-blur-lg bg-background/70 border border-white/10;
+    @apply backdrop-blur-lg bg-card/70 border border-white/10;
   }
 
   .glass-strong {
-    @apply backdrop-blur-xl bg-background/80 border border-white/10;
+    @apply backdrop-blur-xl bg-card/80 border border-white/10;
   }
 
   .glass-subtle {
@@ -115,18 +115,18 @@
   }
 
   .glass-card {
-    @apply backdrop-blur-xl bg-background/60 border border-white/20 shadow-lg shadow-black/5;
+    @apply backdrop-blur-xl bg-card/60 border border-white/15 shadow-xl shadow-black/20;
   }
 }
 
 /* Gradient Text Utilities */
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-violet-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-600;
   }
 
   .text-gradient-subtle {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-violet-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-500;
   }
 }
 

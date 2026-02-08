@@ -96,19 +96,19 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-white text-sm font-medium">Email</Label>
         <Input
           id="email"
           type="email"
           placeholder="you@example.com"
           {...register("email")}
-          className={errors.email ? "border-destructive" : ""}
+          className={`h-11 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 ${errors.email ? "border-red-500" : ""}`}
         />
         {errors.email && (
           <motion.p
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive flex items-center gap-1"
+            className="text-sm text-red-400 flex items-center gap-1"
           >
             <AlertCircle className="h-4 w-4" />
             {errors.email.message}
@@ -117,19 +117,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="text-white text-sm font-medium">Password</Label>
         <Input
           id="password"
           type="password"
           placeholder="••••••••"
           {...register("password")}
-          className={errors.password ? "border-destructive" : ""}
+          className={`h-11 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 ${errors.password ? "border-red-500" : ""}`}
         />
         {errors.password && (
           <motion.p
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive flex items-center gap-1"
+            className="text-sm text-red-400 flex items-center gap-1"
           >
             <AlertCircle className="h-4 w-4" />
             {errors.password.message}
@@ -141,7 +141,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive flex items-start gap-2"
+          className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400 flex items-start gap-2"
         >
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
@@ -152,7 +152,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-start gap-2"
+          className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-sm text-emerald-400 flex items-start gap-2"
         >
           <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <span>{successMessage}</span>
@@ -162,7 +162,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full h-11 text-base font-medium shadow-lg shadow-indigo-500/30"
+        className="w-full h-11 text-base font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-colors"
       >
         {loading ? (
           <>
