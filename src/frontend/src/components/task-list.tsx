@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dayjs from "dayjs";
-import { CheckCircle2, Circle, Edit, Trash2, Clock, Flag, Bell } from "lucide-react";
+import { CheckCircle2, Circle, Edit, Trash2, Clock, Flag, Bell, ClipboardList } from "lucide-react";
 import { Task } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { ClipboardList } from "lucide-react";
 
 interface TaskListProps {
   tasks: Task[];
@@ -25,7 +24,7 @@ const taskVariants = {
   exit: { opacity: 0, x: -20 },
 };
 
-export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskListProps) {
+export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskListProps): JSX.Element {
   const sortedTasks = useMemo(() => {
     // Sort logic:
     // 1. Incomplete tasks first
@@ -137,7 +136,7 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
   return (
     <AnimatePresence mode="popLayout">
       <ul className="space-y-4">
-        {sortedTasks.map((task, index) => (
+        {sortedTasks.map((task: Task, index: number) => (
           <motion.li
             key={task.id}
             variants={taskVariants}
